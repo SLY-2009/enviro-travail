@@ -40,7 +40,7 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDJCNTExNUU3RjQxMjNFOTcKUldTWFBoTDA1eFZSSzM5Nm52OVkwU01QeEk1YU9leUQvKzBENG9KWkJPaGZkQ0xlWWlYYksrMFkK",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDQ5NEM1MjgyQjA1OEIzM0YKUldRL3MxaXdnbEpNU1FBWjNjdU9FV1NVVTBtL2E3YXpRaSs5Q2tBelhXS3N1d1ZRRk1LYjU0cnMK",
       "endpoints": [
         "https://github.com/VOTRE-COMPTE-GITHUB/enviro-travail/releases/latest/download/latest.json"
       ],
