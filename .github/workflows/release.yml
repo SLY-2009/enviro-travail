@@ -1,7 +1,11 @@
 name: release
+# Se declenche a chaque envoi (git push) sur la branche main, sans etiquette ni numero a changer a la main.
 on:
   push:
-    tags: ["v*"]
+    branches: [main]
+    paths-ignore:
+      - "**.md"
+  workflow_dispatch:
 jobs:
   build:
     runs-on: windows-latest
@@ -16,6 +20,19 @@ jobs:
       - uses: swatinem/rust-cache@v2
         with:
           workspaces: "src-tauri -> target"
+      - name: Numero de version automatique
+        shell: pwsh
+        run: |
+          $v = "0.2.${{ github.run_number }}"
+          $f = "src-tauri/tauri.conf.json"
+          $t = Get-Content $f -Raw
+          $t = ([regex]'"version":\s*"[^"]*"').Replace($t, '"version": "' + $v + '"', 1)
+          Set-Content $f $t -NoNewline
+          $f = "src-tauri/Cargo.toml"
+          $t = Get-Content $f -Raw
+          $t = ([regex]'(?m)^version\s*=\s*"[^"]*"').Replace($t, 'version = "' + $v + '"', 1)
+          Set-Content $f $t -NoNewline
+          "VERSION=$v" | Out-File -FilePath $env:GITHUB_ENV -Append
       - run: npm install
       - uses: tauri-apps/tauri-action@v0
         env:
@@ -23,8 +40,8 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
-          tagName: ${{ github.ref_name }}
-          releaseName: "Enviro Travail ${{ github.ref_name }}"
-          releaseBody: "Télécharge le fichier se terminant par -setup.exe pour l'installer. L'application se met ensuite à jour toute seule."
+          tagName: v${{ env.VERSION }}
+          releaseName: "Enviro Travail ${{ env.VERSION }}"
+          releaseBody: "Telecharge le fichier se terminant par -setup.exe pour l'installer. L'application se met ensuite a jour toute seule."
           releaseDraft: false
           prerelease: false
