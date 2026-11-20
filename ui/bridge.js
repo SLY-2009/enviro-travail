@@ -74,8 +74,16 @@ function mapMsg(m, tid, withBody) {
 
 /* ---------- « Outils » Gmail ---------- */
 async function searchThreads(a) {
-  const n = a.pageSize || 25, q = encodeURIComponent(a.query || "in:inbox");
-  const l = await gapi("GET", G + "threads?maxResults=" + n + "&q=" + q);
+  const n = a.pageSize || 25; let q = a.query || "in:inbox", lab = "";
+  const lm = /label:(\S+)/.exec(q); // « label:à-répondre » : on retrouve l'identifiant de l'étiquette par son nom
+  if (lm) {
+    const norm = x => x.toLowerCase().replace(/\s+/g, "-");
+    const r = await gapi("GET", G + "labels");
+    const lb = (r.labels || []).find(x => norm(x.name) === norm(lm[1]));
+    if (!lb) return { threads: [] };
+    lab = "&labelIds=" + encodeURIComponent(lb.id); q = q.replace(lm[0], "").trim();
+  }
+  const l = await gapi("GET", G + "threads?maxResults=" + n + lab + (q ? "&q=" + encodeURIComponent(q) : ""));
   const ids = (l.threads || []).map(t => t.id), em = await myEmail(), out = []; let i = 0;
   const hs = "&metadataHeaders=Subject&metadataHeaders=From&metadataHeaders=To&metadataHeaders=Cc&metadataHeaders=Date";
   async function worker() { while (i < ids.length) { const k = i++; const t = await gapi("GET", G + "threads/" + ids[k] + "?format=metadata" + hs); out[k] = { id: t.id, messages: (t.messages || []).map(m => mapMsg(m, t.id, false)), viewUrl: threadUrl(em, t.id) }; } }
@@ -89,6 +97,10 @@ async function getThread(a) {
 async function listLabels() {
   const r = await gapi("GET", G + "labels");
   return { labels: (r.labels || []).map(l => ({ labelId: l.id, name: l.name, labelType: l.type === "user" ? "USER" : "SYSTEM", color: l.color || null })) };
+}
+async function createLabel(a) {
+  const l = await gapi("POST", G + "labels", { name: a.name, labelListVisibility: "labelShow", messageListVisibility: "show" });
+  return { labelId: l.id, name: l.name, labelType: "USER" };
 }
 async function modify(a, add, rem) { await gapi("POST", G + "threads/" + a.threadId + "/modify", { addLabelIds: add || [], removeLabelIds: rem || [] }); return {}; }
 
@@ -129,7 +141,7 @@ async function listEvents(a) {
 
 /* ---------- Adaptateur « connecteurs » attendu par l'interface ---------- */
 const TOOLS = {
-  "Gmail": { search_threads: searchThreads, get_thread: getThread, list_labels: listLabels,
+  "Gmail": { search_threads: searchThreads, get_thread: getThread, list_labels: listLabels, create_label: createLabel,
     label_thread: a => modify(a, a.labelIds, []), unlabel_thread: a => modify(a, [], a.labelIds),
     reply: sendReply, create_draft: createDraft },
   "Google Calendar": { list_events: listEvents }
@@ -171,4 +183,10 @@ const gear = el("button", "border:0;background:none;font-size:15px;cursor:pointe
 gear.title = "Compte Google"; gear.onclick = () => showGate();
 const mb = document.querySelector("#mb"); if (mb) mb.insertBefore(gear, document.querySelector("#bell"));
 inv("google_status").then(s => { if (s.configured && s.connected) resolveReady(); else showGate(); }).catch(() => showGate());
+
+/* ---------- Mise à jour : au lancement (résultat affiché), puis toutes les 6 heures ---------- */
+const say = m => { if (window.toast) window.toast(m); };
+const checkUpdate = quiet => inv("check_update").then(m => { if (!quiet) say(m); }).catch(e => { if (!quiet) say("Mise à jour impossible : " + String(e).slice(0, 160)); });
+setTimeout(() => checkUpdate(false), 2500);
+setInterval(() => checkUpdate(true), 6 * 3600 * 1000);
 })();

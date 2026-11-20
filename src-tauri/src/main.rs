@@ -6,22 +6,26 @@ mod google;
 use tauri::Emitter;
 use tauri_plugin_updater::UpdaterExt;
 
-/// Vérifie au lancement s'il existe une version plus récente ; si oui, la télécharge,
-/// l'installe puis relance l'application.
-async fn check_update(app: tauri::AppHandle) -> Result<(), String> {
+/// Cherche une mise à jour ; si elle existe, la télécharge, l'installe puis relance l'application.
+/// Appelée par l'interface au lancement (puis toutes les 6 heures) : le résultat est affiché à l'écran.
+#[tauri::command]
+async fn check_update(app: tauri::AppHandle) -> Result<String, String> {
+    let current = app.package_info().version.to_string();
     let updater = app.updater().map_err(|e| e.to_string())?;
-    if let Some(update) = updater.check().await.map_err(|e| e.to_string())? {
-        let _ = app.emit(
-            "update-status",
-            format!("Mise à jour {} : téléchargement et installation…", update.version),
-        );
-        update
-            .download_and_install(|_chunk, _total| {}, || {})
-            .await
-            .map_err(|e| e.to_string())?;
-        app.restart();
+    match updater.check().await.map_err(|e| e.to_string())? {
+        Some(update) => {
+            let _ = app.emit(
+                "update-status",
+                format!("Mise à jour {} : téléchargement et installation…", update.version),
+            );
+            update
+                .download_and_install(|_chunk, _total| {}, || {})
+                .await
+                .map_err(|e| e.to_string())?;
+            app.restart();
+        }
+        None => Ok(format!("Application à jour (version {current})")),
     }
-    Ok(())
 }
 
 fn main() {
@@ -36,17 +40,9 @@ fn main() {
             google::google_login,
             google::google_logout,
             google::google_request,
-            google::open_external
+            google::open_external,
+            check_update
         ])
-        .setup(|app| {
-            let handle = app.handle().clone();
-            tauri::async_runtime::spawn(async move {
-                if let Err(e) = check_update(handle).await {
-                    eprintln!("Vérification de mise à jour : {e}");
-                }
-            });
-            Ok(())
-        })
         .run(tauri::generate_context!())
         .expect("erreur au lancement de l'application");
 }

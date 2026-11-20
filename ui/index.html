@@ -154,6 +154,19 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .sqw{flex:0 1 460px;min-width:260px}
 .jl{flex:1 1 240px;min-width:220px}
 @media (max-width:1000px){#app.sp2{display:block}.pane{position:fixed;right:0;top:calc(40px + env(safe-area-inset-top,0px));bottom:0;width:min(440px,100vw);max-height:none;z-index:40;border-radius:14px 0 0 0}}
+#app{max-width:none !important;margin:0 !important}
+.mbg{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.38);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:16px}
+.mdl{background:var(--card);color:var(--tx);border:1px solid var(--bd);border-radius:14px;box-shadow:0 16px 60px rgba(0,0,0,.3);width:min(640px,100%);max-height:88vh;overflow:auto;padding:14px 18px}
+.mdl.wide{width:min(840px,100%)}
+.mdl .ph{position:sticky;top:-14px;background:var(--card);padding:2px 0 8px;margin:0 0 6px;z-index:2;font-size:16px}
+.st{border:0;background:none;color:var(--mu);font-size:12px;padding:1px 6px;opacity:0;align-self:center;white-space:nowrap}
+.tk:hover .st{opacity:.8}
+.st.on{opacity:1;border-radius:10px;padding:1px 8px}
+.st.cours{background:color-mix(in srgb,var(--p3) 18%,transparent);color:var(--p3)}
+.st.verif{background:color-mix(in srgb,var(--p2) 20%,transparent);color:var(--p2)}
+.tk.drag,.it.drag{position:relative;z-index:6;background:var(--card);box-shadow:0 6px 18px rgba(0,0,0,.25);opacity:.95;cursor:grabbing}
+.tk,.it.lk{user-select:none}
+.btn.on{background:var(--ac);color:#fff;border-color:var(--ac)}
 #hb{position:relative}
 .add .pb{opacity:.45}
 .add .pb.on{opacity:1;outline:2px solid var(--tx);outline-offset:1px}
@@ -188,7 +201,7 @@ let CFG={},dbRef=null,dbT=null;
 const ld=(k,d)=>{if(k in CFG)return CFG[k]===undefined?d:CFG[k];try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch{return d}};
 const sv=(k,v)=>{CFG[k]=v;try{localStorage.setItem(k,JSON.stringify(v))}catch{}if(dbRef){clearTimeout(dbT);dbT=setTimeout(saveCfg,900)}};
 function saveCfg(){if(!dbRef)return;try{dbRef.set({cfg:JSON.stringify(CFG),ts:Date.now()}).catch(()=>{})}catch{}}
-function applyCfg(){tasks=ld("enviro.tasks",[]);imp=ld("enviro.imp",{});tab=ld("enviro.tab","home");if(!TABS.some(t=>t.id===tab))tab="home";ag=ld("enviro.ag2","grid");gv=ld("enviro.gv","week");HL=ld("enviro.hl2",null);thm=ld("enviro.thm","auto");notif=ld("enviro.notif",false);setTheme(thm);bell();renderAll()}
+function applyCfg(){tasks=ld("enviro.tasks",[]);migTasks();imp=ld("enviro.imp",{});mo=ld("enviro.mo",{rep:[],lire:[]});mg=ld("enviro.mg","inbox");tab=ld("enviro.tab","home");if(!TABS.some(t=>t.id===tab))tab="home";ag=ld("enviro.ag2","grid");gv=ld("enviro.gv","week");HL=ld("enviro.hl3",null);thm=ld("enviro.thm","auto");notif=ld("enviro.notif",false);setTheme(thm);bell();renderAll()}
 async function loadCfg(){try{
   if(!window.claude)return;
   const[db,u]=await Promise.all([window.claude.use("db"),window.claude.use("user")]);if(!db||!u)return;
@@ -203,9 +216,11 @@ const PR={1:"Urgent",2:"Important",3:"Normal"};
 const IMP=[{k:"crit",l:"Critique",c:"var(--p1)"},{k:"imp",l:"Important",c:"var(--p2)"},{k:"norm",l:"Normal",c:"var(--p3)"},{k:"opt",l:"Optionnel",c:"var(--p4)"}];
 const ERR={needs_reauth:"Session Google expirée : reconnecte-toi avec l’icône ⚙ en haut.",server_not_connected:"Connecte-toi à Google avec l’icône ⚙ en haut.",not_in_manifest:"Accès non autorisé pour cette page : rouvre-la pour le réautoriser.",blocked_by_policy:"Accès bloqué par la politique de ton organisation.",approval_required:"Autorisation requise.",selection_required:"Plusieurs connecteurs portent ce nom : choisis-en un dans claude.ai."};
 const AUTHZ=["needs_reauth","server_not_connected","not_in_manifest","blocked_by_policy","approval_required","selection_required"];
-const Q={mail:["Gmail","search_threads",{query:"in:inbox",pageSize:50,view:"THREAD_VIEW_MINIMAL"}],cal:["Google Calendar","list_events",{pageSize:30,orderBy:"startTime"}]};
+const Q={mail:["Gmail","search_threads",{query:"in:inbox",pageSize:50,view:"THREAD_VIEW_MINIMAL"}],cal:["Google Calendar","list_events",{pageSize:30,orderBy:"startTime"}],rep:["Gmail","search_threads",{query:"label:à-répondre",pageSize:50,view:"THREAD_VIEW_MINIMAL"}],lire:["Gmail","search_threads",{query:"label:à-lire",pageSize:50,view:"THREAD_VIEW_MINIMAL"}]};
 
-let tasks=ld("enviro.tasks",[]),imp=ld("enviro.imp",{}),mails=[],labels=[],lf="",ev3=[],sel="",events=[],st={mail:null,cal:null,rng:null},mcp=null,loaded={mail:false,cal:false,rng:false};
+let tasks=ld("enviro.tasks",[]),imp=ld("enviro.imp",{}),mails=[],labels=[],lf="",ev3=[],sel="",events=[],st={mail:null,cal:null,rng:null,rep:null,lire:null},mcp=null,loaded={mail:false,cal:false,rng:false,rep:false,lire:false},lists={rep:[],lire:[]},mo=ld("enviro.mo",{rep:[],lire:[]}),mg=ld("enviro.mg","inbox"),curDay="";
+function migTasks(){if(!tasks.some(t=>t.prio!=null))return;tasks.sort((a,b)=>(a.done-b.done)||(a.prio-b.prio)||(a.ts-b.ts));tasks.forEach(t=>{delete t.prio});sv("enviro.tasks",tasks)}
+migTasks();
 const fDay=new Intl.DateTimeFormat("fr-FR",{weekday:"long",day:"numeric",month:"long"});
 const fHr=new Intl.DateTimeFormat("fr-FR",{hour:"2-digit",minute:"2-digit"});
 const fShort=new Intl.DateTimeFormat("fr-FR",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"});
@@ -215,7 +230,7 @@ const errTxt=e=>ERR[e&&e.code]||("Échec"+(e&&e.code?" ("+e.code+")":""));
 
 /* ---------- Navigation ---------- */
 const TABS=[{id:"home",l:"Accueil",i:"🏠"},{id:"mail",l:"Mails",i:"✉️"},{id:"tasks",l:"Tâches",i:"✅"},{id:"cal",l:"Agenda",i:"🗓️"}];
-let tab=ld("enviro.tab","home"),ag=ld("enviro.ag2","grid"),owner="",fx=null,pn=null,selT=null,gd="",gv=ld("enviro.gv","week"),selEv="",nav=[],np=3,ot=null,th={},exp={},dr={},thm=ld("enviro.thm","auto"),notif=ld("enviro.notif",false),lastDrag=0,dOrder=ld("enviro.dock",[]),HL=ld("enviro.hl2",null);
+let tab=ld("enviro.tab","home"),ag=ld("enviro.ag2","grid"),owner="",fx=null,pn=null,selT=null,gd="",gv=ld("enviro.gv","week"),selEv="",nav=[],np=3,ot=null,th={},exp={},dr={},thm=ld("enviro.thm","auto"),notif=ld("enviro.notif",false),lastDrag=0,dOrder=ld("enviro.dock",[]),HL=ld("enviro.hl3",null);
 const au=()=>owner?"authuser="+encodeURIComponent(owner):"";
 const gmailUrl=()=>"https://mail.google.com/mail/?"+au()+"#inbox",composeUrl=()=>"https://mail.google.com/mail/?"+au()+"&view=cm&fs=1";
 const gcalUrl=()=>"https://calendar.google.com/calendar/r?"+au(),newEvUrl=()=>"https://calendar.google.com/calendar/r/eventedit?"+au();
@@ -229,8 +244,8 @@ function go(id){if(id===tab)return;nav.push(snapN());if(nav.length>40)nav.shift(
 function back(){const p=nav.pop();if(!p)return;tab=p.tab;ag=p.ag;gd=p.gd||gd;fx=null;sv("enviro.tab",tab);renderAll();window.scrollTo(0,p.y)}
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!/INPUT|TEXTAREA|SELECT/.test((document.activeElement||{}).tagName||"")){if(pn)closePane();else if(nav.length)back()}});
 function clock(){const d=new Date();$("#clk").textContent=cap(fDay.format(d))+"  "+fHr.format(d)}
-function refreshAll(){if(!mcp)return;pull("mail");pull("cal");pullRange(true)}
-const urgent=()=>tasks.filter(t=>!t.done&&t.prio===1);
+function refreshAll(){if(!mcp)return;pull("mail");pull("cal");pull("rep");pull("lire");pullRange(true)}
+const openT=()=>tasks.filter(t=>!t.done),rankC=i=>i<2?"var(--p1)":i<5?"var(--p2)":"var(--p3)",urgent=()=>openT().slice(0,2);
 const ICO={home:'<path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v10h13V10"/>',mail:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',tasks:'<rect x="4" y="4" width="16" height="16" rx="3"/><path d="m8.5 12.5 2.5 2.5 4.5-5"/>',cal:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',trash:'<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>'};
 function ico(n){const e=h("span",{class:"ico"});e.innerHTML='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">'+ICO[n]+'</svg>';return e}
 function renderTabs(){const d=$("#tabs");d.textContent="";
@@ -239,7 +254,7 @@ function renderTabs(){const d=$("#tabs");d.textContent="";
     d.append(h("button",{class:"tb2"+(tab===t.id?" on":""),title:t.l,"aria-label":t.l,onclick:()=>go(t.id)},ico(t.id),c?h("span",{class:"nb2"+(t.id==="tasks"&&u?" red":""),text:c>99?"99+":String(c)}):null))}
   d.append(h("span",{class:"tsep"}),h("a",{class:"tb2 ex",title:"Ouvrir Gmail (nouvel onglet)","aria-label":"Ouvrir Gmail",href:gmailUrl(),target:"gmail"},ico("mail"),h("sup",{text:"↗"})),h("a",{class:"tb2 ex",title:"Ouvrir Google Agenda (nouvel onglet)","aria-label":"Ouvrir Google Agenda",href:gcalUrl(),target:"gcal"},ico("cal"),h("sup",{text:"↗"})));
   document.title=(u?"("+u+") ":"")+"Enviro Travail"}
-function banner(){const u=urgent();return h("div",{class:"alert",title:"Voir les tâches urgentes",onclick:()=>go("tasks")},"⚠️ "+u.length+(u.length>1?" tâches urgentes":" tâche urgente")+" : "+u.slice(0,2).map(t=>t.title).join(" · ")+(u.length>2?" …":""))}
+function banner(){const u=urgent();return h("div",{class:"alert",title:"Voir les tâches",onclick:()=>go("tasks")},"⚠️ "+u.length+(u.length>1?" tâches prioritaires":" tâche prioritaire")+" : "+u.slice(0,2).map(t=>t.title).join(" · ")+(u.length>2?" …":""))}
 function bell(){const b=$("#bell");if(!("Notification" in window)){b.style.display="none";return}
   const on=notif&&Notification.permission==="granted";b.textContent=on?"🔔":"🔕";b.title="Alerte navigateur pour les tâches urgentes : "+(on?"activée":"désactivée")}
 async function toggleBell(){try{
@@ -250,16 +265,16 @@ async function toggleBell(){try{
 function notifyUrgent(){if(!notif||!("Notification" in window)||Notification.permission!=="granted")return;
   const u=urgent();if(!u.length)return;const key=dk(new Date())+":"+u.map(t=>t.id).sort().join(",");
   if(ld("enviro.nk","")===key)return;sv("enviro.nk",key);
-  try{new Notification(u.length+(u.length>1?" tâches urgentes":" tâche urgente"),{body:u.slice(0,3).map(t=>t.title).join(" · ")})}catch{}}
+  try{new Notification(u.length+(u.length>1?" tâches prioritaires":" tâche prioritaire"),{body:u.slice(0,3).map(t=>t.title).join(" · ")})}catch{}}
 function setTheme(v){thm=v;sv("enviro.thm",v);const r=document.documentElement;if(v==="auto")r.removeAttribute("data-theme");else r.setAttribute("data-theme",v);
   const b=$("#thm");b.textContent=v==="auto"?"🌓":v==="light"?"☀️":"🌙";b.title="Thème : "+(v==="auto"?"automatique":v==="light"?"jour":"nuit")+" (cliquer pour changer)"}
 function card(t,id,key){const body=h("div",{class:"wb"});
-  body._sec=h("section",{class:"card w",id:"hc-"+key},h("div",{class:"wh"},h("h3",{text:t}),h("span",{class:"sp"}),h("button",{title:"Ouvrir",text:"↗",onclick:()=>go(id,1)})),body,h("div",{class:"rz"}));
+  body._sec=h("section",{class:"card w",id:"hc-"+key},h("div",{class:"wh"},h("h3",{text:t}),h("span",{class:"sp"}),h("button",{title:"Ouvrir",text:"↗",onclick:()=>{if(key==="mr")mg="rep";else if(key==="ml")mg="lire";else if(key==="mb")mg="inbox";go(id)}})),body,h("div",{class:"rz"}));
   return body}
 /* mise en page libre de l'accueil */
-function hDef(){const W=Math.max(280,($("#hb")||{}).clientWidth||600),g=12;
-  if(W>=640){const w=Math.floor((W-g)/2);return{ev:{x:0,y:0,w,h:320},tk:{x:w+g,y:0,w,h:320},jr:{x:0,y:332,w:W,h:400},mb:{x:0,y:744,w,h:280}}}
-  return{ev:{x:0,y:0,w:W,h:300},tk:{x:0,y:312,w:W,h:300},jr:{x:0,y:624,w:W,h:560},mb:{x:0,y:1196,w:W,h:280}}}
+function hDef(){const W=Math.max(300,($("#hb")||{}).clientWidth||1200),g=12;
+  if(W>=900){const w=Math.floor((W-2*g)/3);return{mr:{x:0,y:0,w,h:360},ml:{x:w+g,y:0,w,h:360},tk:{x:2*(w+g),y:0,w,h:360},ev:{x:0,y:372,w,h:420},jr:{x:w+g,y:372,w:2*w+g,h:420},mb:{x:0,y:804,w,h:280}}}
+  return{mr:{x:0,y:0,w:W,h:320},ml:{x:0,y:332,w:W,h:320},tk:{x:0,y:664,w:W,h:320},ev:{x:0,y:996,w:W,h:300},jr:{x:0,y:1308,w:W,h:520},mb:{x:0,y:1840,w:W,h:280}}}
 function hFit(){const b=$("#hb");if(!b)return;let m=0;for(const k in HL)m=Math.max(m,HL[k].y+HL[k].h);b.style.height=(m+8)+"px"}
 function hPlace(id){const e=$("#hc-"+id),l=HL[id];if(!e||!l)return;e.style.left=l.x+"px";e.style.top=l.y+"px";e.style.width=l.w+"px";e.style.height=l.h+"px";e.style.zIndex=l.z||1;hFit()}
 function hFront(id){const m=Math.max(...Object.values(HL).map(l=>l.z||1));HL[id].z=m+1;$("#hc-"+id).style.zIndex=HL[id].z}
@@ -279,13 +294,36 @@ function hDrag(el,id,mode){
     const mv=ev=>{const dx=ev.clientX-sx,dy=ev.clientY-sy;
       if(mode==="move"){l.x=Math.max(0,o.x+dx);l.y=Math.max(0,o.y+dy)}else{l.w=Math.max(240,o.w+dx);l.h=Math.max(160,o.h+dy)}
       if(!ev.altKey)hSnap(id,mode);hPlace(id)};
-    const up=()=>{el.removeEventListener("pointermove",mv);el.removeEventListener("pointerup",up);el.removeEventListener("pointercancel",up);sv("enviro.hl2",HL)};
+    const up=()=>{el.removeEventListener("pointermove",mv);el.removeEventListener("pointerup",up);el.removeEventListener("pointercancel",up);sv("enviro.hl3",HL)};
     el.addEventListener("pointermove",mv);el.addEventListener("pointerup",up);el.addEventListener("pointercancel",up)})}
-function addRow(){const inp=h("input",{placeholder:"Nouvelle tâche…"});
-  const bs=[1,2,3].map(n=>h("button",{class:"pb p"+n+(np===n?" on":""),title:PR[n],text:"P"+n,onclick:()=>{np=n;bs.forEach((x,i)=>x.classList.toggle("on",i+1===n))}}));
-  const submit=()=>{const v=inp.value.trim();if(!v)return;inp.value="";tasks.push({id:"t"+Date.now(),title:v,from:"",url:"",prio:np,done:false,ts:Date.now()});sv("enviro.tasks",tasks);renderAll()};
+function addRow(){const inp=h("input",{placeholder:"Nouvelle tâche (ajoutée en bas de la liste)…"});
+  const submit=()=>{const v=inp.value.trim();if(!v)return;inp.value="";tasks.push({id:"t"+Date.now(),title:v,from:"",url:"",st:"",done:false,ts:Date.now()});sv("enviro.tasks",tasks);renderAll()};
   inp.addEventListener("keydown",e=>{if(e.key==="Enter")submit()});
-  return h("div",{class:"add"},inp,...bs,h("button",{text:"+",title:"Ajouter",onclick:submit}))}
+  return h("div",{class:"add"},inp,h("button",{text:"+",title:"Ajouter",onclick:submit}))}
+function sortable(list,sel,onDrop){
+  list.querySelectorAll(sel).forEach(row=>{
+    row.addEventListener("pointerdown",e=>{
+      if(e.button!==0||e.target.closest("button,input,select,a,textarea"))return;
+      const sy=e.clientY;let on=false;
+      try{row.setPointerCapture(e.pointerId)}catch{}
+      const mv=ev=>{const dy=ev.clientY-sy;if(!on&&Math.abs(dy)>6){on=true;row.classList.add("drag")}if(on)row.style.transform="translateY("+dy+"px)"};
+      const up=ev=>{row.removeEventListener("pointermove",mv);row.removeEventListener("pointerup",up);row.removeEventListener("pointercancel",up);
+        if(!on)return;row.classList.remove("drag");row.style.transform="";
+        const others=[...list.querySelectorAll(sel)].filter(x=>x!==row);
+        let i=others.findIndex(o=>{const r=o.getBoundingClientRect();return ev.clientY<r.top+r.height/2});if(i<0)i=others.length;
+        const ids=others.map(o=>o.dataset.id);ids.splice(i,0,row.dataset.id);onDrop(ids)};
+      row.addEventListener("pointermove",mv);row.addEventListener("pointerup",up);row.addEventListener("pointercancel",up)})})}
+function taskRow(t,i,full){
+  const cb=h("input",{type:"checkbox",onchange:()=>{t.done=cb.checked;sv("enviro.tasks",tasks);renderAll()}});cb.checked=t.done;
+  const lab=t.st==="cours"?"en cours":t.st==="verif"?"à vérifier":"";
+  const sb=h("button",{class:"st"+(lab?" on "+t.st:""),title:"Statut : en cours / à vérifier",text:lab||"statut",onclick:e=>{e.stopPropagation();t.st=t.st==="cours"?"verif":t.st==="verif"?"":"cours";sv("enviro.tasks",tasks);renderAll()}});
+  return h("div",{class:"tk lk"+(t.done?" done":"")+(full&&selT===t.id?" on":""),"data-id":t.id,style:"border-left:4px solid "+(t.done?"var(--bd)":rankC(i))+";padding-left:8px",
+    ...(full?{onclick:e=>{if(e.target.closest("button,input,a"))return;selT=selT===t.id?null:t.id;renderAll()}}:{})},
+    cb,h("div",{class:"tb"},h("div",{class:"tl",text:t.title}),t.from?h("div",{class:"sn",text:t.from}):null),sb)}
+function taskList(parent,full){
+  const box=h("div",{});openT().forEach((t,i)=>box.append(taskRow(t,i,full)));tasks.filter(t=>t.done).forEach(t=>box.append(taskRow(t,-1,full)));
+  parent.append(box);
+  sortable(box,".tk:not(.done)",ids=>{const m=new Map(tasks.map(t=>[t.id,t]));tasks=[...ids.map(id=>m.get(id)),...tasks.filter(t=>t.done)];sv("enviro.tasks",tasks);renderAll()})}
 function squares(now){
   const by={};for(const e of ev3)for(const k of evDays(e))(by[k]=by[k]||[]).push(e);
   const td=dk(now),t0=new Date(now.getFullYear(),now.getMonth(),now.getDate()),end=new Date(now.getFullYear(),now.getMonth()+3,0);
@@ -304,8 +342,8 @@ function squares(now){
       const lv=es.some(e=>imp[e.id]==="crit")?"crit":es.some(e=>imp[e.id]==="imp")?"imp":"";
       if(lv&&!past){if(lv==="crit")nc++;else ni++;if(!nx)nx=d}
       g.append(h("button",{class:"sq"+(lv?" "+lv:"")+(key===td?" today":"")+(past?" past":"")+(d.getMonth()%2?" odd":""),
-        title:fDay.format(d)+(es.length?"\n"+es.map(e=>e.summary||"(sans titre)").join("\n"):""),
-        onclick:()=>{sel=key;openPane("day",key)}}))}}
+        title:fDay.format(d)+(es.length?"\n"+es.map(e=>e.summary||"(sans titre)").join("\n"):"")+"\n(double-clic pour ouvrir)",
+        ondblclick:()=>{sel=key;openPane("day",key)}}))}}
   const sq=h("div",{class:"sqw"},
     h("div",{class:"lg"},h("span",{class:"badge b1",text:nc+(nc>1?" jours critiques":" jour critique")}),h("span",{class:"badge b2",text:ni+(ni>1?" jours importants":" jour important")}),
       h("span",{text:nx?"Prochain : "+fDay.format(nx):"Aucun jour important à venir."})),ml,g);
@@ -327,39 +365,44 @@ function rHome(b){b.textContent="";
     up.forEach(e=>c1.append(evLite(e)))}
   const c3=card("Jours importants","cal","jr");
   if(!stateMsg("rng",c3))c3.append(squares(now));
-  const c2=card("À répondre","tasks","tk"),op=tasks.filter(t=>!t.done).sort((a,c)=>a.prio-c.prio||a.ts-c.ts);
+  const c2=card("Tâches","tasks","tk");
   c2.append(addRow());
-  if(!op.length)c2.append(h("div",{class:"msg",text:"Aucune tâche en cours."}));
-  op.forEach(t=>c2.append(h("div",{class:"tk"},h("span",{class:"badge b"+t.prio,text:"P"+t.prio}),h("div",{class:"tb"},h("div",{class:"tl",text:t.title})))));
-  if(op.length>5)c2.append(h("div",{class:"dt",text:"+ "+(op.length-5)+" autres"}));
+  if(!tasks.length)c2.append(h("div",{class:"msg",text:"Aucune tâche."}));
+  taskList(c2,false);
   const c4=card("Boîte de réception","mail","mb");
   if(!stateMsg("mail",c4)){const u=unread();
     c4.append(h("div",{class:"big",text:String(u.length)}),h("div",{class:"dt",text:(u.length>1?"non lus":"non lu")+" parmi les "+mails.length+" derniers"}));
     u.slice(0,3).forEach(t=>{const m=(t.messages||[]).slice(-1)[0]||{};c4.append(h("div",{class:"it lk",title:"Voir dans les mails",onclick:()=>openMail(t)},h("div",{class:"sd",text:m.sender||""}),h("div",{class:"sj",text:m.subject||"(sans objet)"})))})}
-  const bs=[["ev",c1],["jr",c3],["tk",c2],["mb",c4]];
+  const c5=card("Mails à répondre","mail","mr");mailList(c5,"rep");
+  const c6=card("Mails à lire","mail","ml");mailList(c6,"lire");
+  const bs=[["mr",c5],["ml",c6],["tk",c2],["ev",c1],["jr",c3],["mb",c4]];
   for(const[,c]of bs)hb.append(c._sec);
   if(!HL)HL=hDef();const dd=hDef();for(const[k]of bs)if(!HL[k])HL[k]=dd[k];
-  for(const[k,c]of bs){hPlace(k);c._sec.addEventListener("pointerdown",()=>{hFront(k);sv("enviro.hl2",HL)},true);hDrag(c._sec.querySelector(".wh"),k,"move");hDrag(c._sec.querySelector(".rz"),k,"size")}}
+  for(const[k,c]of bs){hPlace(k);c._sec.addEventListener("pointerdown",()=>{hFront(k);sv("enviro.hl3",HL)},true);hDrag(c._sec.querySelector(".wh"),k,"move");hDrag(c._sec.querySelector(".rz"),k,"size")}}
 function renderAll(){const ae=document.activeElement;if(ae&&ae.matches&&ae.matches("#app .add input,#app textarea")&&ae.value)return;const app=$("#app");app.textContent="";
   const T=TABS.find(t=>t.id===tab);
   const hd=h("div",{class:"vh"},h("h2",{text:tab==="home"?"ARTFX - Chez Ouam":T.l}));
   if(tab==="cal"){const sg=h("div",{class:"seg"});
     for(const[k,l]of[["grid","Planning"],["week","Liste"],["focus","Essentiel"],["range","3 mois"]])sg.append(h("button",{class:ag===k?"on":"",text:l,onclick:()=>{if(ag===k)return;nav.push(snapN());ag=k;sv("enviro.ag2",k);renderAll()}}));
     hd.append(sg)}
-  if(tab==="home")hd.append(h("button",{text:"Réinitialiser",title:"Remettre les cartes à leur place",onclick:()=>{HL=null;sv("enviro.hl2",null);renderAll()}}));
+  if(tab==="mail"){const sg=h("div",{class:"seg"});
+    for(const[k,l]of[["inbox","Boîte de réception"],["rep","À répondre"+(lists.rep.length?" ("+lists.rep.length+")":"")],["lire","À lire"+(lists.lire.length?" ("+lists.lire.length+")":"")]])sg.append(h("button",{class:mg===k?"on":"",text:l,onclick:()=>{if(mg===k)return;mg=k;sv("enviro.mg",k);renderAll()}}));
+    hd.append(sg)}
   if(tab==="mail")hd.append(lnk("✎ Nouveau mail",composeUrl(),"gmail"),lnk("Ouvrir Gmail ↗",gmailUrl(),"gmail"));
   if(tab==="cal")hd.append(lnk("+ Événement",newEvUrl(),"gcal"),lnk("Ouvrir Agenda ↗",gcalUrl(),"gcal"));
   if(tab==="tasks")hd.append(taskTools());
   if(tab!=="tasks")hd.append(h("button",{title:"Actualiser",text:"↻",onclick:refreshAll}));
   if(nav.length)hd.prepend(h("button",{class:"btn",title:"Retour",text:"‹ Retour",onclick:back}));
-  const box=h("div",{class:tab==="home"?"":"panel"});const mc=h("div",{class:"mainc"});if(urgent().length)mc.append(banner());mc.append(hd,box);app.append(mc);
-  app.classList.toggle("sp2",!!pn);
-  if(pn){const pb=h("div",{class:"pb2"});app.append(h("aside",{class:"pane"},h("div",{class:"ph"},h("b",{text:paneTitle()}),h("span",{style:"flex:1"}),h("button",{class:"btn",title:"Fermer (Échap)","aria-label":"Fermer",text:"×",onclick:closePane})),pb));rPane(pb)}
+  const box=h("div",{class:tab==="home"?"":"panel"});const mc=h("div",{class:"mainc"});if(urgent().length&&tab!=="tasks"&&tab!=="home")mc.append(banner());mc.append(hd,box);app.append(mc);
+  if(pn){const pb=h("div",{class:"mb2"}),bg=h("div",{class:"mbg",onclick:e=>{if(e.target===bg)closePane()}},h("div",{class:"mdl"+(pn.k==="mail"?" wide":"")},h("div",{class:"ph"},h("b",{text:paneTitle()}),h("span",{style:"flex:1"}),h("button",{class:"btn",title:"Fermer (Échap)","aria-label":"Fermer",text:"×",onclick:closePane})),pb));app.append(bg);rPane(pb)}
   ({home:rHome,mail:rMail,tasks:rTasks,cal:ag==="grid"?rGrid:ag==="week"?rCal:ag==="focus"?rFocus:rRange})[tab](box);
   renderTabs();notifyUrgent();
   if(fx){const el=$(".hl");if(el)el.scrollIntoView({block:"center",behavior:"smooth"});
     clearTimeout(renderAll.t);renderAll.t=setTimeout(()=>{fx=null;document.querySelectorAll(".hl").forEach(x=>x.classList.remove("hl"))},3000)}}
-function build(){gd=dk(new Date());setTheme(thm);$("#thm").onclick=()=>setTheme(thm==="auto"?"light":thm==="light"?"dark":"auto");$("#bell").onclick=toggleBell;bell();renderAll();clock();setInterval(clock,30000)}
+function dayTick(){const t=dk(new Date());if(!curDay)curDay=t;
+  if(t!==curDay){const old=curDay;curDay=t;if(gd===old||!gd)gd=t;if(mcp)pullRange(true);renderAll()}
+  else if(tab==="cal"&&ag==="grid"&&!pn)renderAll()}
+function build(){gd=dk(new Date());curDay=gd;setInterval(dayTick,60000);document.addEventListener("visibilitychange",()=>{if(!document.hidden){dayTick();clock()}});setTheme(thm);$("#thm").onclick=()=>setTheme(thm==="auto"?"light":thm==="light"?"dark":"auto");$("#bell").onclick=toggleBell;bell();renderAll();clock();setInterval(clock,30000)}
 
 /* ---------- Mails ---------- */
 function pbtn(n,t){return h("button",{class:"pb p"+n,title:"Ajouter aux tâches : "+PR[n],text:"P"+n,onclick:()=>addTask(t,n)})}
@@ -371,6 +414,8 @@ function stateMsg(k,b){const e=st[k];
   if(!loaded[k]){b.append(h("div",{class:"msg",text:"Chargement…"}));return true}
   return false}
 function rMail(b){b.textContent="";
+  if(mg==="rep"){mailList(b,"rep");return}
+  if(mg==="lire"){mailList(b,"lire");return}
   if(stateMsg("mail",b))return;
   const fs=h("select",{onchange:()=>{lf=fs.value;renderAll()}},h("option",{value:"",text:"Toutes les étiquettes"}),h("option",{value:"-",text:"Sans étiquette"}),...labels.map(x=>h("option",{value:x.labelId,text:x.name})));
   fs.value=lf;
@@ -386,10 +431,9 @@ function rMail(b){b.textContent="";
       h("div",{class:"sj"},m.subject||"(sans objet)"),
       h("div",{class:"sn",text:dec(m.snippet)}),
       h("div",{class:"act"},
-        h("button",{class:"btn sm",text:"Lire / Répondre",onclick:()=>openMail(t)}),h("span",{class:"dt",text:"Tâche :"}),pbtn(1,t),pbtn(2,t),pbtn(3,t),
+        h("button",{class:"btn sm",text:"Lire / Répondre",onclick:()=>openMail(t)}),tagBtn(t,"rep"),tagBtn(t,"lire"),
         h("button",{text:"Archiver",onclick:()=>archive(t)}),
-        lsel(t),
-        inT?h("span",{class:"badge b"+inT.prio,text:"en tâche · P"+inT.prio}):null),
+        lsel(t)),
       lbOf(t).length?h("div",{class:"act"},lbOf(t).map(i=>chip(i))):null))}}
 async function archive(t){
   try{await mcp.callTool("Gmail","unlabel_thread",{threadId:t.id,labelIds:["INBOX"]});
@@ -502,8 +546,9 @@ function rDayPane(b){const k=pn.id,es=ev3.filter(e=>evDays(e).includes(k)).sort(
   if(!es.length)b.append(h("div",{class:"msg",text:"Rien ce jour-là."}));
   es.forEach(e=>b.append(evRow(e,true)))}
 function taskTools(){const t=tasks.find(x=>x.id===selT),w=h("span",{class:"tctl tt"});
-  w.append(h("span",{class:"dt",text:t?"Priorité :":"Sélectionne une tâche"}));
-  for(const n of[1,2,3]){const bt=h("button",{class:"pb p"+n+(t&&t.prio===n?" on":""),title:"Priorité "+PR[n],text:"P"+n,onclick:()=>{if(!t)return;t.prio=n;sv("enviro.tasks",tasks);renderAll()}});if(!t)bt.disabled=true;w.append(bt)}
+  w.append(h("span",{class:"dt",text:t?"Tâche sélectionnée :":"Glisse une tâche pour la monter ou la descendre ; clique pour la sélectionner"}));
+  const mvT=d=>{const o=openT(),i=o.findIndex(x=>x.id===selT),j=i+d;if(i<0||j<0||j>=o.length)return;[o[i],o[j]]=[o[j],o[i]];tasks=[...o,...tasks.filter(x=>x.done)];sv("enviro.tasks",tasks);renderAll()};
+  for(const[l,d,ti]of[["▲",-1,"Monter"],["▼",1,"Descendre"]]){const bt=h("button",{class:"btn sm",title:ti,text:l,onclick:()=>mvT(d)});if(!t||t.done)bt.disabled=true;w.append(bt)}
   const del=h("button",{class:"btn sm",title:"Supprimer la tâche sélectionnée"},ico("trash"));let arm=0;
   if(!t)del.disabled=true;
   del.onclick=()=>{if(!t)return;
@@ -513,12 +558,8 @@ function taskTools(){const t=tasks.find(x=>x.id===selT),w=h("span",{class:"tctl 
   w.append(del);return w}
 function rTasks(b){b.textContent="";
   b.append(addRow());
-  const s=[...tasks].sort((a,c)=>(a.done-c.done)||(a.prio-c.prio)||(a.ts-c.ts));
-  if(!s.length)b.append(h("div",{class:"msg",text:"Aucune tâche. Utilise P1, P2 ou P3 sur un mail pour l’ajouter ici."}));
-  for(const t of s){
-    const cb=h("input",{type:"checkbox",onchange:()=>{t.done=cb.checked;sv("enviro.tasks",tasks);renderAll()}});cb.checked=t.done;
-    b.append(h("div",{class:"tk lk"+(t.done?" done":"")+(fx&&fx.k==="task"&&fx.id===t.id?" hl":"")+(selT===t.id?" on":""),onclick:e=>{if(e.target.closest("button,input,a"))return;selT=selT===t.id?null:t.id;renderAll()}},
-      cb,h("span",{class:"badge b"+t.prio,text:"P"+t.prio}),h("div",{class:"tb"},h("div",{class:"tl",text:t.title}),t.from?h("div",{class:"sn",text:t.from}):null)))}}
+  if(!tasks.length)b.append(h("div",{class:"msg",text:"Aucune tâche. La couleur dépend de la position : les premières sont les plus prioritaires."}));
+  taskList(b,true)}
 
 /* ---------- Lecture / réponse ---------- */
 function openMail(t){openPane("mail",t.id)}
@@ -552,14 +593,14 @@ function replyBox(last,nm){const id=ot;
     catch(e){toast("Brouillon impossible : "+errTxt(e))}}});
   return h("div",{class:"rb"},h("div",{class:"sn",text:"Réponse à "+nm(last.sender)}),ta,h("div",{class:"act"},send,dft,h("label",{class:"sn"},ra," Répondre à tous"),h("label",{class:"sn"},sg," Inclure ma signature")))}
 function rThread(b){b.textContent="";
-  const x=th[ot]||{},t=mails.find(m=>m.id===ot);
+  const x=th[ot]||{},t=mails.find(m=>m.id===ot)||lists.rep.find(m=>m.id===ot)||lists.lire.find(m=>m.id===ot);
   if(!mcp){b.append(h("div",{class:"msg",text:"Les connecteurs ne sont pas disponibles ici."}));return}
   if(x.err){b.append(h("div",{class:"msg",text:errTxt(x.err)}),h("button",{text:"Réessayer",onclick:()=>loadThread(ot,true)}));return}
   if(!x.d){b.append(h("div",{class:"msg",text:"Chargement…"}));return}
   const ms=x.d.messages||[],last=ms[ms.length-1]||{};
   const nm=a=>{for(const m of ms)for(const d of m.addressDisplayNames||[])if(d.emailAddress===a)return d.displayName;return a||"—"};
   const hd=h("div",{class:"th-h"},h("h3",{class:"th-s",text:last.subject||"(sans objet)"}));
-  if(t){hd.append(pbtn(1,t),pbtn(2,t),pbtn(3,t),h("button",{class:"btn sm",text:"Archiver",onclick:async()=>{await archive(t);if(!mails.some(m=>m.id===ot))closePane()}}))}
+  if(t){hd.append(tagBtn(t,"rep"),tagBtn(t,"lire"),h("button",{class:"btn sm",text:"Archiver",onclick:async()=>{await archive(t);if(!mails.some(m=>m.id===ot))closePane()}}))}
   if(x.d.viewUrl)hd.append(h("a",{class:"btn sm",href:x.d.viewUrl,target:"gmail",text:"Gmail ↗"}));
   b.append(hd);
   for(const m of ms){const body=(m.plaintextBody||m.snippet||"").trim(),full=exp[m.id]||body.length<=2500;
@@ -626,6 +667,30 @@ function lbOf(t){const ids=new Set(labels.map(x=>x.labelId));return[...new Set((
 function chip(id){const x=labels.find(l=>l.labelId===id);if(!x)return null;
   const ok=v=>/^#[0-9a-f]{6}$/i.test(v||""),c=x.color||{};
   return h("span",{class:"badge",style:"background:"+(ok(c.backgroundColor)?c.backgroundColor:"var(--p4)")+";color:"+(ok(c.textColor)?c.textColor:"#fff"),text:x.name})}
+const TAGS={rep:"À répondre",lire:"À lire"};
+const tagLbl=k=>labels.find(x=>x.name===TAGS[k]);
+const hasTag=(t,k)=>{const l=tagLbl(k);return !!l&&lbOf(t).includes(l.labelId)};
+async function tagMail(t,k){
+  try{let l=tagLbl(k);
+    if(!l){const r=await mcp.callTool("Gmail","create_label",{name:TAGS[k]}),p=r&&r.payload;if(!p||!p.labelId)throw{code:"bad"};l={labelId:p.labelId,name:TAGS[k],labelType:"USER"};labels.push(l);labels.sort((a,b)=>a.name.localeCompare(b.name,"fr"))}
+    const on=hasTag(t,k),ms=t.messages||[],m=ms[ms.length-1];
+    if(on){await mcp.callTool("Gmail","unlabel_thread",{threadId:t.id,labelIds:[l.labelId]});if(m)m.labelIds=(m.labelIds||[]).filter(x=>x!==l.labelId)}
+    else{await mcp.callTool("Gmail","label_thread",{threadId:t.id,labelIds:[l.labelId]});if(m)m.labelIds=[...(m.labelIds||[]),l.labelId]}
+    renderAll();pull(k);toast(on?"« "+TAGS[k]+" » retiré":"Ajouté à « "+TAGS[k]+" »")}
+  catch(e){toast("Étiquetage impossible : "+errTxt(e))}}
+const tagBtn=(t,k)=>h("button",{class:"btn sm"+(hasTag(t,k)?" on":""),title:hasTag(t,k)?"Retirer l’étiquette":"Ajouter l’étiquette dans Gmail",text:TAGS[k],onclick:()=>tagMail(t,k)});
+const ordered=k=>{const o=mo[k]||[];return[...lists[k]].sort((a,b)=>{const x=o.indexOf(a.id),y=o.indexOf(b.id);return(x<0?1e9:x)-(y<0?1e9:y)})};
+function mailRow(t,k,i){const ms=t.messages||[],m=ms[ms.length-1]||{},d=m.date?fShort.format(new Date(m.date)):"";
+  return h("div",{class:"it lk","data-id":t.id,style:"border-left:4px solid "+rankC(i)+";padding-left:8px",onclick:e=>{if(e.target.closest("button,a,select,input"))return;openMail(t)}},
+    h("div",{class:"r1"},h("span",{class:"sd",text:m.sender||"—"}),h("span",{class:"dt",text:d})),
+    h("div",{class:"sj",text:m.subject||"(sans objet)"}),
+    h("div",{class:"act"},h("button",{class:"btn sm",text:"Fait",title:"Retirer l’étiquette « "+TAGS[k]+" »",onclick:()=>tagMail(t,k)}),h("button",{class:"btn sm",text:"Lire / Répondre",onclick:()=>openMail(t)})))}
+function mailList(b,k){
+  if(stateMsg(k,b))return;
+  const ths=ordered(k);
+  if(!ths.length){b.append(h("div",{class:"msg",text:"Aucun mail étiqueté « "+TAGS[k]+" ». Pose cette étiquette dans Gmail, ou avec les boutons de la boîte de réception."}));return}
+  const box=h("div",{});ths.forEach((t,i)=>box.append(mailRow(t,k,i)));b.append(box);
+  sortable(box,".it",ids=>{mo[k]=ids;sv("enviro.mo",mo);renderAll()})}
 function lsel(t){const have=lbOf(t);
   const s=h("select",{title:"Ajouter une étiquette",onchange:()=>{if(s.value)applyLabel(t,s.value)}},h("option",{value:"",text:"+ Étiquette"}),...labels.filter(x=>!have.includes(x.labelId)).map(x=>h("option",{value:x.labelId,text:x.name})));return s}
 async function applyLabel(t,id){
@@ -636,19 +701,19 @@ async function applyLabel(t,id){
 
 /* ---------- Chargement des connecteurs ---------- */
 function apply(k,res){const p=res&&res.payload;if(!p||typeof p!=="object")return;if(k==="cal"&&p.summary)owner=p.summary;
-  if(k==="mail")mails=p.threads||[];else events=(p.events||[]).filter(e=>e.status!=="cancelled");
+  if(k==="mail")mails=p.threads||[];else if(k==="rep"||k==="lire")lists[k]=p.threads||[];else events=(p.events||[]).filter(e=>e.status!=="cancelled");
   st[k]=null;loaded[k]=true;renderAll()}
 async function pull(k){try{apply(k,await mcp.callTool(...Q[k],{cache:{refresh:true}}))}catch(e){st[k]=e;loaded[k]=true;renderAll()}}
 function watch(k){mcp.watchTool(...Q[k],ev=>{
   if(ev.type==="data")apply(k,ev.result);
-  else{st[k]=ev.error;loaded[k]=true;if(AUTHZ.includes(ev.error.code)){if(k==="mail")mails=[];else events=[]}renderAll()}},{refetchInterval:120000})}
+  else{st[k]=ev.error;loaded[k]=true;if(AUTHZ.includes(ev.error.code)){if(k==="mail")mails=[];else if(k==="rep"||k==="lire")lists[k]=[];else events=[]}renderAll()}},{refetchInterval:120000})}
 
 build();
 (async()=>{
   try{mcp=window.claude?await window.claude.use("mcp"):null}catch{mcp=null}
   renderAll();
   loadCfg();
-  if(mcp){watch("mail");watch("cal");pullRange();setInterval(()=>pullRange(true),300000);
+  if(mcp){watch("mail");watch("cal");watch("rep");watch("lire");pullRange();setInterval(()=>pullRange(true),300000);
     mcp.callTool("Gmail","list_labels",{}).then(r=>{const p=r&&r.payload;labels=((p&&p.labels)||[]).filter(x=>x.labelType==="USER").sort((a,b)=>a.name.localeCompare(b.name,"fr"));renderAll()}).catch(()=>{})}
 })();
 </script>
