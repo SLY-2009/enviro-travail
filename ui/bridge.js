@@ -77,7 +77,7 @@ async function searchThreads(a) {
   const n = a.pageSize || 25; let q = a.query || "in:inbox", lab = "";
   const lm = /label:(\S+)/.exec(q); // « label:à-répondre » : on retrouve l'identifiant de l'étiquette par son nom
   if (lm) {
-    const norm = x => x.toLowerCase().replace(/\s+/g, "-");
+    const norm = x => x.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-");
     const r = await gapi("GET", G + "labels");
     const lb = (r.labels || []).find(x => norm(x.name) === norm(lm[1]));
     if (!lb) return { threads: [] };
