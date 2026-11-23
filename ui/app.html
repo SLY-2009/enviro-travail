@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="fr"><head><meta charset="utf-8">
-<meta name="enviro-ui" content="20261123-0939">
+<meta name="enviro-ui" content="20261123-1425">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Enviro Travail</title>
 <style>
@@ -177,6 +177,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .card .wh{background:var(--hd)}
 .card .wh h3{color:var(--tx);font-weight:700}
 .mbg{z-index:1000}
+.mdl{max-height:calc(88vh / var(--z,1))}
 .add button.danger{background:var(--p1);color:#fff;border-color:var(--p1)}
 .add button:disabled{opacity:.35}
 #hb{position:relative}
@@ -429,7 +430,7 @@ let CFG={},dbRef=null,dbT=null;
 const ld=(k,d)=>{if(k in CFG)return CFG[k]===undefined?d:CFG[k];try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch{return d}};
 const sv=(k,v)=>{CFG[k]=v;try{localStorage.setItem(k,JSON.stringify(v))}catch{}if(dbRef){clearTimeout(dbT);dbT=setTimeout(saveCfg,900)}};
 function saveCfg(){if(!dbRef)return;try{dbRef.set({cfg:JSON.stringify(CFG),ts:Date.now()}).catch(()=>{})}catch{}}
-function applyCfg(){tasks=ld("enviro.tasks",[]);migTasks();imp=ld("enviro.imp",{});mo=ld("enviro.mo",{rep:[],lire:[]});mg=ld("enviro.mg","inbox");tab=ld("enviro.tab","home");if(!TABS.some(t=>t.id===tab))tab="home";ag=ld("enviro.ag2","grid");gv=ld("enviro.gv","week");HL=ld("enviro.hl4",null);thm=ld("enviro.thm","auto");notif=ld("enviro.notif",false);setTheme(thm);bell();renderAll()}
+function applyCfg(){tasks=ld("enviro.tasks",[]);migTasks();imp=ld("enviro.imp",{});mo=ld("enviro.mo",{rep:[],lire:[]});mg=ld("enviro.mg","inbox");tab=ld("enviro.tab","home");if(!TABS.some(t=>t.id===tab))tab="home";ag=ld("enviro.ag2","grid");gv=ld("enviro.gv","week");HL=ld("enviro.hl4",null);thm=ld("enviro.thm","auto");zoomF=ld("enviro.zoom",1);applyZoom();notif=ld("enviro.notif",false);setTheme(thm);bell();renderAll()}
 async function loadCfg(){try{
   if(!window.claude)return;
   const[db,u]=await Promise.all([window.claude.use("db"),window.claude.use("user")]);if(!db||!u)return;
@@ -471,7 +472,7 @@ const snapN=()=>({tab,ag,ot,gd,y:window.scrollY});
 function go(id){if(id===tab)return;nav.push(snapN());if(nav.length>40)nav.shift();tab=id;fx=null;sv("enviro.tab",id);window.scrollTo(0,0);renderAll()}
 function back(){const p=nav.pop();if(!p)return;tab=p.tab;ag=p.ag;gd=p.gd||gd;fx=null;sv("enviro.tab",tab);renderAll();window.scrollTo(0,p.y)}
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!/INPUT|TEXTAREA|SELECT/.test((document.activeElement||{}).tagName||"")){if(pn)closePane();else if(nav.length)back()}});
-function clock(){const d=new Date();$("#clk").textContent=cap(fDay.format(d))+"  "+fHr.format(d)}
+function clock(){const d=new Date(),v=(document.querySelector('meta[name="enviro-ui"]')||{}).content;$("#clk").textContent=cap(fDay.format(d))+"  "+fHr.format(d)+(v?"  ·  interface "+v:"")}
 function refreshAll(){if(!mcp)return;pull("mail");pull("cal");pull("rep");pull("lire");pull("star");pullRange(true)}
 const openT=()=>tasks.filter(t=>!t.done),rankC=i=>i<2?"var(--p1)":i<5?"var(--p2)":"var(--p3)",urgent=()=>openT().slice(0,2);
 const ICO={home:'<path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v10h13V10"/>',mail:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',tasks:'<rect x="4" y="4" width="16" height="16" rx="3"/><path d="m8.5 12.5 2.5 2.5 4.5-5"/>',cal:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',trash:'<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>'};
@@ -521,7 +522,7 @@ function hDrag(el,id,mode){
     if(e.target.closest("button,select,input,a"))return;
     e.preventDefault();el.setPointerCapture(e.pointerId);hFront(id);dragging=true;
     const l=HL[id],sx=e.clientX,sy=e.clientY,o={...l};
-    const mv=ev=>{const dx=ev.clientX-sx,dy=ev.clientY-sy;
+    const mv=ev=>{const dx=(ev.clientX-sx)/Z(),dy=(ev.clientY-sy)/Z();
       if(mode==="move"){l.x=Math.max(0,o.x+dx);l.y=Math.max(0,o.y+dy)}else{l.w=Math.max(240,o.w+dx);l.h=Math.max(160,o.h+dy)}
       if(!ev.altKey)hSnap(id,mode);hPlace(id)};
     const up=()=>{el.removeEventListener("pointermove",mv);el.removeEventListener("pointerup",up);el.removeEventListener("pointercancel",up);sv("enviro.hl4",HL);dragging=false;flushR()};
@@ -530,9 +531,8 @@ function addRow(){const inp=h("input",{placeholder:"Nouvelle tâche (ajoutée en
   const submit=()=>{const v=inp.value.trim();if(!v)return;inp.value="";tasks.push({id:"t"+Date.now(),title:v,from:"",url:"",st:"",done:false,ts:Date.now()});sv("enviro.tasks",tasks);renderAll()};
   inp.addEventListener("keydown",e=>{if(e.key==="Enter")submit()});
   const nd=tasks.filter(t=>t.done).length;let arm=0;
-  const minus=h("button",{text:"−",title:nd?"Supprimer les "+nd+" tâche(s) terminée(s)":"Aucune tâche terminée à supprimer"});
-  if(!nd)minus.disabled=true;
-  minus.onclick=()=>{if(!arm){arm=1;minus.textContent="Supprimer "+nd+" ?";minus.classList.add("danger");setTimeout(()=>{if(!minus.isConnected)return;arm=0;minus.textContent="−";minus.classList.remove("danger")},4000);return}
+  const minus=h("button",{class:"minus",text:nd?"− "+nd:"−",title:nd?"Supprimer les "+nd+" tâche(s) terminée(s)":"Supprime les tâches cochées « terminées » (aucune pour l’instant)"});
+  minus.onclick=()=>{if(!nd){toast("Aucune tâche terminée : coche d’abord les tâches finies.");return}if(!arm){arm=1;minus.textContent="Supprimer "+nd+" ?";minus.classList.add("danger");setTimeout(()=>{if(!minus.isConnected)return;arm=0;minus.textContent="− "+nd;minus.classList.remove("danger")},4000);return}
     tasks=tasks.filter(t=>!t.done);selT=null;sv("enviro.tasks",tasks);renderAll()};
   return h("div",{class:"add"},inp,h("button",{text:"+",title:"Ajouter",onclick:submit}),minus)}
 let dragging=false,pendingR=false,lastOk={};
@@ -553,11 +553,11 @@ function sortable(list,sel,onDrop,own,onCross){
       const target=ev=>own?document.elementsFromPoint(ev.clientX,ev.clientY).find(x=>x.dataset&&x.dataset.drop&&x.dataset.drop!==own):null;
       const mv=ev=>{const dx=ev.clientX-sx,dy=ev.clientY-sy;
         if(!on&&Math.hypot(dx,dy)>6){on=true;dragging=true;
-          if(own){const r=row.getBoundingClientRect();gh=row.cloneNode(true);gh.classList.add("gh-drag");gh.style.cssText="position:fixed;left:"+r.left+"px;top:"+r.top+"px;width:"+r.width+"px;z-index:9999;pointer-events:none;opacity:.93;box-shadow:0 8px 24px rgba(0,0,0,.3);background:var(--card);border-radius:8px";document.body.append(gh);row.style.opacity=".35"}
+          if(own){const r=row.getBoundingClientRect();gh=row.cloneNode(true);gh.classList.add("gh-drag");gh.style.cssText="position:fixed;left:"+r.left/Z()+"px;top:"+r.top/Z()+"px;width:"+r.width/Z()+"px;z-index:9999;pointer-events:none;opacity:.93;box-shadow:0 8px 24px rgba(0,0,0,.3);background:var(--card);border-radius:8px";document.body.append(gh);row.style.opacity=".35"}
           else row.classList.add("drag")}
         if(!on)return;
-        if(gh){gh.style.transform="translate("+dx+"px,"+dy+"px)";document.querySelectorAll(".dz").forEach(x=>x.classList.remove("dz"));const tg=target(ev);if(tg)tg.classList.add("dz")}
-        else row.style.transform="translateY("+dy+"px)"};
+        if(gh){gh.style.transform="translate("+dx/Z()+"px,"+dy/Z()+"px)";document.querySelectorAll(".dz").forEach(x=>x.classList.remove("dz"));const tg=target(ev);if(tg)tg.classList.add("dz")}
+        else row.style.transform="translateY("+dy/Z()+"px)"};
       const up=ev=>{row.removeEventListener("pointermove",mv);row.removeEventListener("pointerup",up);row.removeEventListener("pointercancel",up);
         document.querySelectorAll(".dz").forEach(x=>x.classList.remove("dz"));
         dragging=false;
@@ -660,10 +660,17 @@ function renderAll(){if(dragging){pendingR=true;return}pendingR=false;document.q
   renderTabs();notifyUrgent();
   if(fx){const el=$(".hl");if(el)el.scrollIntoView({block:"center",behavior:"smooth"});
     clearTimeout(renderAll.t);renderAll.t=setTimeout(()=>{fx=null;document.querySelectorAll(".hl").forEach(x=>x.classList.remove("hl"))},3000)}}
+let zoomF=ld("enviro.zoom",1);
+const Z=()=>zoomF||1;
+function applyZoom(){const r=document.documentElement;r.style.zoom=zoomF===1?"":String(zoomF);r.style.setProperty("--z",String(zoomF))}
+function setZoom(z){z=Math.min(2,Math.max(.5,Math.round(z*100)/100));if(Math.abs(z-1)<.04)z=1;if(z===zoomF)return;zoomF=z;applyZoom();sv("enviro.zoom",z);toast("Zoom "+Math.round(z*100)+" %  (Ctrl + 0 pour revenir à 100 %)")}
+window.addEventListener("wheel",e=>{if(!e.ctrlKey)return;e.preventDefault();setZoom(zoomF*(e.deltaY<0?1.1:1/1.1))},{passive:false});
+document.addEventListener("keydown",e=>{if(!(e.ctrlKey||e.metaKey))return;
+  if(e.key==="+"||e.key==="="){e.preventDefault();setZoom(zoomF*1.1)}else if(e.key==="-"){e.preventDefault();setZoom(zoomF/1.1)}else if(e.key==="0"){e.preventDefault();setZoom(1)}});
 function dayTick(){const t=dk(new Date());if(!curDay)curDay=t;
   if(t!==curDay){const old=curDay;curDay=t;if(gd===old||!gd)gd=t;if(mcp)pullRange(true);renderAll()}
   else if(tab==="cal"&&ag==="grid"&&!pn)renderAll()}
-function build(){gd=dk(new Date());curDay=gd;window.addEventListener("focus",()=>{if(Date.now()-(window.__fr||0)>20000){window.__fr=Date.now();refreshAll()}});setInterval(dayTick,60000);document.addEventListener("visibilitychange",()=>{if(!document.hidden){dayTick();clock()}});setTheme(thm);$("#thm").onclick=()=>setTheme(thm==="auto"?"light":thm==="light"?"dark":"auto");$("#bell").onclick=toggleBell;bell();renderAll();clock();setInterval(clock,30000)}
+function build(){applyZoom();gd=dk(new Date());curDay=gd;window.addEventListener("focus",()=>{if(Date.now()-(window.__fr||0)>20000){window.__fr=Date.now();refreshAll()}});setInterval(dayTick,60000);document.addEventListener("visibilitychange",()=>{if(!document.hidden){dayTick();clock()}});setTheme(thm);$("#thm").onclick=()=>setTheme(thm==="auto"?"light":thm==="light"?"dark":"auto");$("#bell").onclick=toggleBell;bell();renderAll();clock();setInterval(clock,30000)}
 
 /* ---------- Mails ---------- */
 function pbtn(n,t){return h("button",{class:"pb p"+n,title:"Ajouter aux tâches : "+PR[n],text:"P"+n,onclick:()=>addTask(t,n)})}
