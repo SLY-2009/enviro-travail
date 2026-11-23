@@ -1,0 +1,1004 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="enviro-ui" content="20261123-0939">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Enviro Travail</title>
+<style>
+:root{--bg:#f3f2ee;--card:#fff;--tx:#1c1c1a;--mu:#6b6a64;--bd:#dcdad2;--ac:#2f5d50;--hv:#ecebe5;--p1:#c0392b;--p2:#d97d0f;--p3:#2f6fb0;--p4:#8a8a85;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#171716;--card:#232321;--tx:#ecebe6;--mu:#a09f97;--bd:#3a3a36;--ac:#6fb59f;--hv:#2d2d2a;--p1:#e5604f;--p2:#f0a043;--p3:#5b9ee0;--p4:#9a9a94;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#171716;--card:#232321;--tx:#ecebe6;--mu:#a09f97;--bd:#3a3a36;--ac:#6fb59f;--hv:#2d2d2a;--p1:#e5604f;--p2:#f0a043;--p3:#5b9ee0;--p4:#9a9a94;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--tx);font:14px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif}
+.top{display:flex;align-items:center;justify-content:space-between;padding:10px 16px}
+.top h1{font-size:16px;margin:0;font-weight:600}
+button,select,input{font:inherit;color:inherit}
+button{background:var(--card);border:1px solid var(--bd);border-radius:6px;padding:3px 8px;cursor:pointer}
+button:hover{background:var(--hv)}
+#board{position:relative;margin:0 16px 24px}
+.w{position:absolute;background:var(--card);border:1px solid var(--bd);border-radius:10px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.wh{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid var(--bd);cursor:grab;touch-action:none;user-select:none;font-weight:600}
+.wh .sp{flex:1}
+.wb{flex:1;overflow:auto;padding:6px 10px}
+.rz{position:absolute;right:0;bottom:0;width:18px;height:18px;cursor:nwse-resize;touch-action:none;background:linear-gradient(135deg,transparent 55%,var(--bd) 55%,var(--bd) 65%,transparent 65%,transparent 78%,var(--bd) 78%,var(--bd) 88%,transparent 88%)}
+.it{padding:7px 0;border-bottom:1px solid var(--bd)}
+.it:last-child{border:0}
+.r1{display:flex;gap:8px;justify-content:space-between}
+.sd{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dt{color:var(--mu);font-size:12px;white-space:nowrap}
+.sj{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sn{color:var(--mu);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.act{display:flex;gap:4px;margin-top:5px;align-items:center;flex-wrap:wrap}
+.act button{font-size:12px;padding:2px 7px}
+.unr .sj{font-weight:600}
+.pb{color:#fff;border:0;min-width:28px}
+.pb.p1,.b1{background:var(--p1)}.pb.p2,.b2{background:var(--p2)}.pb.p3,.b3{background:var(--p3)}
+.badge{font-size:11px;color:#fff;border-radius:10px;padding:1px 7px}
+.msg{color:var(--mu);padding:10px 0}
+.day{font-weight:600;text-transform:capitalize;margin:8px 0 2px;color:var(--mu);font-size:12px}
+.ev{display:flex;gap:8px;align-items:center;padding:5px 0 5px 8px;border-left:4px solid var(--p3)}
+.ev .tm{color:var(--mu);font-size:12px;min-width:84px}
+.ev .tt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ev a{color:inherit;text-decoration:none}
+.ev select{font-size:12px;background:var(--card);border:1px solid var(--bd);border-radius:6px}
+.tk{display:flex;gap:8px;align-items:flex-start;padding:6px 0;border-bottom:1px solid var(--bd)}
+.tk.done .tl{text-decoration:line-through;color:var(--mu)}
+.tk .tb{flex:1;min-width:0}
+.tl{overflow:hidden;text-overflow:ellipsis}
+.tl a{color:inherit}
+.add{display:flex;gap:6px;margin-bottom:6px}
+.add input{flex:1;min-width:0;padding:4px 8px;border:1px solid var(--bd);border-radius:6px;background:var(--card)}
+.months{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
+.mt{font-weight:600;margin-bottom:4px}
+.mg{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.dh{text-align:center;font-size:11px;color:var(--mu)}
+.dc{padding:0;aspect-ratio:1;min-width:0;border-radius:6px;font-size:12px;border:1px solid transparent;background:transparent}
+.dc:hover{background:var(--hv)}
+.dc.past{color:var(--mu);opacity:.55}
+.dc.imp{background:var(--p2);color:#fff;opacity:1}
+.dc.crit{background:var(--p1);color:#fff;opacity:1}
+.dc.today{border-color:var(--tx);font-weight:700}
+.dc.sel{outline:2px solid var(--ac)}
+.dp{margin-top:10px;border-top:1px solid var(--bd);padding-top:4px}
+.lg{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px;font-size:12px;color:var(--mu)}
+.add select,.act select{font-size:12px;background:var(--card);border:1px solid var(--bd);border-radius:6px;padding:2px 6px;max-width:150px}
+#toast{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:8px 14px;border-radius:8px;display:none;z-index:9999}
+
+body{min-height:100vh}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:25;background:color-mix(in srgb,var(--card) 70%,transparent);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px)}
+#mb{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;display:flex;justify-content:space-between;align-items:center;padding:5px 16px;font-size:13px;background:color-mix(in srgb,var(--card) 70%,transparent);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);border-bottom:1px solid var(--bd)}
+#mb #clk{color:var(--mu)}
+#app{max-width:960px;margin:0 auto;padding:12px 16px 120px}
+.vh{display:flex;align-items:center;gap:8px;margin:8px 0 12px}
+.vh h2{margin:0;font-size:26px;font-weight:700;flex:1}
+.panel,.card{background:color-mix(in srgb,var(--card) 85%,transparent);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);border:1px solid var(--bd);border-radius:14px;padding:10px 16px;box-shadow:0 6px 24px rgba(0,0,0,.06)}
+.hg{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+.card h3{margin:2px 0 6px;font-size:12px;color:var(--mu);text-transform:uppercase;letter-spacing:.05em;cursor:pointer}
+.card .tm{min-width:110px}
+.big{font-size:34px;font-weight:700;line-height:1.1}
+.seg{display:flex;background:var(--hv);border-radius:8px;padding:2px}
+.seg button{border:0;background:none;padding:3px 10px;border-radius:6px}
+.seg button.on{background:var(--card);box-shadow:0 1px 2px rgba(0,0,0,.2)}
+#dock{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(10px + env(safe-area-inset-bottom,0px));z-index:30;display:flex;gap:12px;padding:8px 12px;border-radius:22px;background:color-mix(in srgb,var(--card) 65%,transparent);-webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px);border:1px solid var(--bd);box-shadow:0 8px 30px rgba(0,0,0,.18)}
+.dk{position:relative;border:0;background:none;padding:0;transition:transform .15s}
+.dk:hover{background:none;transform:translateY(-6px) scale(1.18)}
+.dk.on::after{content:"";position:absolute;bottom:-6px;left:50%;width:4px;height:4px;margin-left:-2px;border-radius:50%;background:var(--tx)}
+.ic{display:flex;width:52px;height:52px;border-radius:13px;align-items:center;justify-content:center;font-size:28px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.25),0 2px 6px rgba(0,0,0,.25)}
+.ic-home{background:linear-gradient(#6ab0ff,#2f6fe0)}.ic-mail{background:linear-gradient(#7fd0ff,#2a86e8)}.ic-tasks{background:linear-gradient(#7ee08a,#2fa84b)}.ic-cal{background:linear-gradient(#fff,#e4e4e4)}
+.nb{position:absolute;top:-5px;right:-5px;background:#ff3b30;color:#fff;font-size:11px;font-weight:600;min-width:18px;height:18px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 4px}
+.sqm,.sqg{display:grid;gap:3px}
+.sqm{font-size:10px;color:var(--mu);margin-bottom:2px;text-transform:capitalize;white-space:nowrap}
+.sqg{grid-auto-flow:column;grid-template-rows:repeat(7,auto)}
+.sqd{font-size:10px;color:var(--mu);display:flex;align-items:center}
+.sq{padding:0;aspect-ratio:1;min-width:0;border:0;border-radius:4px;background:var(--hv);transition:transform .1s}
+.sq.odd{background:color-mix(in srgb,var(--hv) 55%,var(--bd))}
+.sq.past{opacity:.4}
+.sq.imp{background:var(--p2);opacity:1}
+.sq.crit{background:var(--p1);opacity:1}
+.sq.today{outline:2px solid var(--tx);outline-offset:1px;opacity:1}
+.sq:hover{transform:scale(1.2);position:relative;z-index:2}
+#mb{gap:10px}
+#mb .sp{flex:1}
+#mb button{border:0;background:none;padding:2px 6px;font-size:15px}
+#tabs{display:flex;gap:2px;overflow-x:auto}
+.tb2{border:0;background:none;padding:3px 10px;border-radius:6px;position:relative;color:inherit;text-decoration:none;white-space:nowrap;font-size:13px}
+.tb2.on{background:var(--hv);font-weight:600}
+.tb2.ex{color:var(--mu)}
+.nb2{margin-left:5px;background:var(--p4);color:#fff;border-radius:9px;padding:0 6px;font-size:11px}
+.nb2.red{background:var(--p1)}
+#app{padding-bottom:40px !important}
+#toast{bottom:calc(16px + env(safe-area-inset-bottom,0px)) !important}
+.alert{background:var(--p1);color:#fff;border-radius:10px;padding:8px 14px;margin:8px 0;cursor:pointer;font-weight:600}
+.th-h{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
+.th-s{margin:0;flex:1;font-size:16px}
+.msg-b{padding:8px 0;border-bottom:1px solid var(--bd)}
+.bd{white-space:pre-wrap;overflow-wrap:anywhere;margin-top:6px;font-size:13px}
+.rb{margin-top:10px}
+.rb textarea{width:100%;min-height:110px;padding:8px;border:1px solid var(--bd);border-radius:8px;background:var(--card);resize:vertical}
+.rb .act{margin-top:6px}
+.btn.danger{background:var(--p1);color:#fff;border-color:var(--p1)}
+.ico{display:inline-flex;vertical-align:middle}
+.tsep{width:1px;background:var(--bd);margin:4px 6px}
+.tb2 sup{font-size:9px;margin-left:1px}
+.tb2{padding:5px 9px}
+.gc{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+.gc b{margin:0 6px}
+.gw{overflow-x:auto}
+.gg{display:grid;font-size:12px}
+.gh{border:0;border-radius:0;background:none;padding:4px 0;border-bottom:1px solid var(--bd);display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--mu)}
+.gh b{font-size:18px;width:32px;height:32px;line-height:32px;border-radius:50%;color:var(--tx);text-align:center}
+.gh.td b{background:var(--p3);color:#fff}
+.gl{font-size:10px;color:var(--mu);padding:4px 2px;border-bottom:1px solid var(--bd)}
+.gad{border-bottom:1px solid var(--bd);border-left:1px solid var(--bd);padding:2px;display:flex;flex-direction:column;gap:2px;min-height:22px}
+.gch{border:0;border-left:3px solid var(--c);border-radius:4px;background:color-mix(in srgb,var(--c) 22%,var(--card));text-align:left;padding:1px 5px;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gch.sel,.ge.sel{outline:2px solid var(--tx);z-index:4}
+.gt{position:relative}
+.gt span{position:absolute;right:4px;font-size:10px;color:var(--mu);transform:translateY(-50%)}
+.gt span:first-child{transform:none}
+.gcol{position:relative;border-left:1px solid var(--bd);background-image:repeating-linear-gradient(to bottom,transparent 0,transparent 43px,var(--bd) 43px,var(--bd) 44px)}
+.gcol.td{background-color:color-mix(in srgb,var(--p3) 7%,transparent)}
+.ge{position:absolute;box-sizing:border-box;border:0;border-left:3px solid var(--c);border-radius:4px;background:color-mix(in srgb,var(--c) 24%,var(--card));padding:1px 4px;text-align:left;overflow:hidden;font-size:11px;display:flex;flex-direction:column;align-items:flex-start;line-height:1.2;color:var(--tx)}
+.ge b{font-weight:600;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.ge:hover{filter:brightness(.96);z-index:3}
+.gnow{position:absolute;left:0;right:0;height:2px;background:var(--p1);z-index:5;pointer-events:none}
+#app.sp2{max-width:1400px;display:grid;grid-template-columns:minmax(0,1fr) 440px;gap:16px;align-items:start}
+.mainc{min-width:0;overflow-x:auto}
+.pane{position:sticky;top:48px;max-height:calc(100vh - 64px);overflow:auto;background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:12px 16px;box-shadow:0 6px 24px rgba(0,0,0,.08)}
+.ph{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.tctl{display:flex;gap:3px;align-items:center;margin-left:auto;flex-shrink:0}
+.tctl .pb{opacity:.4;border:0;font-size:12px;padding:3px 9px}
+.tctl button:disabled{opacity:.25;cursor:default}
+.tctl .pb.on{opacity:1;outline:2px solid var(--tx);outline-offset:1px}
+.tctl .ico svg{width:15px;height:15px}
+.tk.lk.on{background:var(--hv)}
+.jr{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start}
+.sqw{flex:0 1 460px;min-width:260px}
+.jl{flex:1 1 240px;min-width:220px}
+@media (max-width:1000px){#app.sp2{display:block}.pane{position:fixed;right:0;top:calc(40px + env(safe-area-inset-top,0px));bottom:0;width:min(440px,100vw);max-height:none;z-index:40;border-radius:14px 0 0 0}}
+#app{max-width:none !important;margin:0 !important}
+.mbg{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.38);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:16px}
+.mdl{background:var(--card);color:var(--tx);border:1px solid var(--bd);border-radius:14px;box-shadow:0 16px 60px rgba(0,0,0,.3);width:min(640px,100%);max-height:88vh;overflow:auto;padding:14px 18px}
+.mdl.wide{width:min(840px,100%)}
+.mdl .ph{position:sticky;top:-14px;background:var(--card);padding:2px 0 8px;margin:0 0 6px;z-index:2;font-size:16px}
+.st{border:0;background:none;color:var(--mu);font-size:12px;padding:1px 6px;opacity:0;align-self:center;white-space:nowrap}
+.tk:hover .st{opacity:.8}
+.st.on{opacity:1;border-radius:10px;padding:1px 8px}
+.st.cours{background:color-mix(in srgb,var(--p3) 18%,transparent);color:var(--p3)}
+.st.verif{background:color-mix(in srgb,var(--p2) 20%,transparent);color:var(--p2)}
+.tk.drag,.it.drag{position:relative;z-index:6;background:var(--card);box-shadow:0 6px 18px rgba(0,0,0,.25);opacity:.95;cursor:grabbing}
+.tk,.it.lk{user-select:none}
+.dz{outline:2px dashed var(--ac);outline-offset:-4px;background:color-mix(in srgb,var(--ac) 8%,transparent)}
+.ed{width:100%;padding:3px 6px;border:1px solid var(--ac);border-radius:6px;background:var(--card);color:inherit}
+.btn.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+:root{--hd:#cfccbf}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--hd:#3a3a35}}
+:root[data-theme="dark"]{--hd:#3a3a35}
+:root[data-theme="light"]{--hd:#cfccbf}
+.card .wh{background:var(--hd)}
+.card .wh h3{color:var(--tx);font-weight:700}
+.mbg{z-index:1000}
+.add button.danger{background:var(--p1);color:#fff;border-color:var(--p1)}
+.add button:disabled{opacity:.35}
+#hb{position:relative}
+.add .pb{opacity:.45}
+.add .pb.on{opacity:1;outline:2px solid var(--tx);outline-offset:1px}
+.lk{cursor:pointer}
+.lk:hover{background:var(--hv)}
+.hl{background:color-mix(in srgb,var(--ac) 16%,transparent);outline:2px solid var(--ac);border-radius:8px}
+.card.w{padding:0;overflow:hidden}
+.card .wh h3{margin:0;font-size:12px;cursor:grab}
+.card .wb{padding:6px 12px}
+.btn{display:inline-block;background:var(--card);border:1px solid var(--bd);border-radius:6px;padding:3px 8px;color:inherit;text-decoration:none;font-size:13px;white-space:nowrap}
+.btn:hover{background:var(--hv)}
+.btn.sm{font-size:12px;padding:2px 7px}
+a.dk{display:block;text-decoration:none}
+.dk{touch-action:none;-webkit-user-drag:none}
+.xt{position:absolute;right:2px;bottom:2px;font-size:11px;font-weight:700;color:#fff;background:rgba(0,0,0,.5);border-radius:6px;padding:0 3px}
+.ic-gmail{background:linear-gradient(#ff6a5c,#d93025);color:#fff;font-weight:700;font-size:26px}
+.ic-gcal{background:linear-gradient(#fff,#e8f0fe);color:#1a73e8;font-weight:700;font-size:22px}
+.vh{flex-wrap:wrap}
+@media (max-width:430px){.ic{width:46px;height:46px}#dock{gap:8px}}
+#toast{bottom:calc(100px + env(safe-area-inset-bottom,0px)) !important}
+</style></head>
+<body>
+<header id="mb"><b>Enviro Travail</b><nav id="tabs"></nav><span class="sp"></span><button id="bell"></button><button id="thm"></button><span id="clk"></span></header>
+<main id="app"></main>
+<div id="toast"></div>
+<script>
+/* Pont entre l'interface et Google : reproduit, avec les API Gmail et Agenda,
+   les « outils » que la version web obtenait des connecteurs de claude.ai.
+   Les jetons restent dans la partie Rust ; ici, on ne fait que demander des requêtes. */
+(() => {
+"use strict";
+const T = window.__TAURI__;
+if (!T) return; // ouvert hors de l'application : on ne touche à rien
+
+const inv = (c, a) => T.core.invoke(c, a);
+let resolveReady; const ready = new Promise(r => { resolveReady = r; });
+
+/* ---------- Fenêtre de connexion ---------- */
+const el = (t, st, txt, ch) => { const e = document.createElement(t); if (st) e.style.cssText = st; if (txt != null) e.textContent = txt; (ch || []).forEach(c => e.append(c)); return e; };
+let gateEl = null;
+const closeGate = () => { if (gateEl) { gateEl.remove(); gateEl = null; } };
+async function showGate(msg) {
+  closeGate();
+  let st = { configured: false, connected: false };
+  try { st = await inv("google_status"); } catch (e) {}
+  const box = el("div", "max-width:480px;width:92%;background:var(--card,#fff);color:var(--tx,#1c1c1a);border:1px solid var(--bd,#dcdad2);border-radius:14px;padding:22px;box-shadow:0 10px 40px rgba(0,0,0,.25)");
+  gateEl = el("div", "position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;font:14px system-ui,sans-serif", null, [box]);
+  box.append(el("h2", "margin:0 0 10px;font-size:18px", "Connexion à Google"));
+  if (msg) box.append(el("p", "color:#c0392b;margin:0 0 10px", msg));
+  const err = el("p", "color:#c0392b;min-height:1.2em;margin:8px 0 0");
+  const inStyle = "width:100%;padding:7px;margin:4px 0 10px;box-sizing:border-box;border:1px solid var(--bd,#ccc);border-radius:6px;background:var(--card,#fff);color:inherit";
+  const btn = (txt, fn, primary) => { const b = el("button", "padding:7px 14px;border-radius:8px;border:1px solid var(--bd,#ccc);cursor:pointer;margin-right:8px;" + (primary ? "background:#2f5d50;color:#fff;border-color:#2f5d50" : "background:var(--card,#fff);color:inherit"), txt); b.onclick = async () => { b.disabled = true; try { await fn(); } catch (e) { err.textContent = String(e && e.message || e); b.disabled = false; } }; return b; };
+  if (!st.configured) {
+    box.append(el("p", "margin:0 0 10px", "Colle l'identifiant et le secret du client Google créé dans la console Google Cloud (voir le guide, étape 2). Ils restent sur cet ordinateur."));
+    const id = el("input", inStyle), sec = el("input", inStyle);
+    id.placeholder = "ID client (xxxx.apps.googleusercontent.com)"; sec.placeholder = "Code secret du client"; sec.type = "password";
+    box.append(id, sec, btn("Enregistrer", async () => { await inv("save_client", { clientId: id.value, clientSecret: sec.value }); await showGate(); }, true));
+  } else if (!st.connected) {
+    box.append(el("p", "margin:0 0 10px", "Un onglet de ton navigateur va s'ouvrir : connecte-toi avec ton compte Google de l'école et accepte les droits demandés."));
+    box.append(btn("Se connecter à Google", async () => { await inv("google_login"); closeGate(); resolveReady(); if (window.refreshAll) window.refreshAll(); }, true));
+    box.append(btn("Changer les identifiants", async () => { try { await inv("google_logout"); } catch (e) {} await inv("reset_client"); await showGate(); }));
+  } else {
+    box.append(el("p", "margin:0 0 10px", "Tu es connecté à Google."));
+    box.append(btn("Fermer", async () => closeGate(), true), btn("Se déconnecter", async () => { await inv("google_logout"); await showGate(); }));
+  }
+  box.append(err);
+  document.body.append(gateEl);
+}
+const needLogin = () => showGate("Ta session Google a expiré. Reconnecte-toi.");
+
+/* ---------- Aides Gmail ---------- */
+const G = "https://gmail.googleapis.com/gmail/v1/users/me/";
+const CAL = "https://www.googleapis.com/calendar/v3/calendars/primary/events";
+const gapi0 = (method, url, body) => inv("google_request", { method, url, body: body === undefined ? null : body });
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+async function gapi(method, url, body) { // les lectures sont retentées si Google répond « trop de requêtes » ou une erreur 5xx
+  for (let i = 0; ; i++) {
+    try { return await gapi0(method, url, body); }
+    catch (e) {
+      const m = String((e && e.message) || e);
+      if (method === "GET" && i < 3 && /Google (429|5\d\d)|rateLimit|quota|Rate Limit/i.test(m)) { await sleep(700 * 2 ** i); continue; }
+      throw e;
+    }
+  }
+}
+const tcache = new Map(); // fils déjà lus : on ne les relit que s'ils ont changé
+let me = "";
+async function myEmail() { if (!me) { const p = await gapi("GET", G + "profile"); me = p.emailAddress || ""; } return me; }
+const threadUrl = (em, id) => "https://mail.google.com/mail/?authuser=" + encodeURIComponent(em) + "#all/" + id;
+const hdr = (m, n) => { const h = ((m.payload && m.payload.headers) || []).find(x => x.name.toLowerCase() === n.toLowerCase()); return h ? h.value : ""; };
+function addrs(v) {
+  const out = [], re = /(?:"?([^"<,]*?)"?\s*)?<([^>]+)>|([^\s,<>]+@[^\s,<>]+)/g; let m;
+  while ((m = re.exec(v || ""))) { const email = (m[2] || m[3] || "").trim(); if (email) out.push({ name: (m[1] || "").trim(), email }); }
+  return out;
+}
+const b64d = s => { const bin = atob(s.replace(/-/g, "+").replace(/_/g, "/")); return new TextDecoder().decode(Uint8Array.from(bin, c => c.charCodeAt(0))); };
+function collect(p, out) { if (!p) return; if (p.mimeType && p.body && p.body.data) out.push({ t: p.mimeType, d: p.body.data }); (p.parts || []).forEach(x => collect(x, out)); }
+function bodyText(p) {
+  const o = []; collect(p, o);
+  const t = o.find(x => x.t === "text/plain"); if (t) return b64d(t.d);
+  const h = o.find(x => x.t === "text/html");
+  if (h) { const d = new DOMParser().parseFromString(b64d(h.d), "text/html"); d.querySelectorAll("style,script").forEach(e => e.remove()); return ((d.body && (d.body.innerText || d.body.textContent)) || "").trim(); }
+  return "";
+}
+function mapMsg(m, tid, withBody) {
+  const from = addrs(hdr(m, "From"))[0] || { email: "", name: "" }, to = addrs(hdr(m, "To")), cc = addrs(hdr(m, "Cc"));
+  const names = [from, ...to, ...cc].filter(a => a.name).map(a => ({ emailAddress: a.email, displayName: a.name }));
+  const o = { id: m.id, threadId: tid, subject: hdr(m, "Subject"), sender: from.email, date: m.internalDate ? new Date(+m.internalDate).toISOString() : "", snippet: m.snippet || "", labelIds: m.labelIds || [], toRecipients: to.map(a => a.email), ccRecipients: cc.map(a => a.email), addressDisplayNames: names };
+  if (withBody) o.plaintextBody = bodyText(m.payload);
+  return o;
+}
+
+/* ---------- « Outils » Gmail ---------- */
+async function searchThreads(a) {
+  const n = a.pageSize || 25; let q = a.query || "in:inbox", lab = "";
+  const lm = /label:(\S+)/.exec(q); // « label:à-répondre » : on retrouve l'identifiant de l'étiquette par son nom
+  if (lm) {
+    const norm = x => x.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-");
+    const r = await gapi("GET", G + "labels");
+    const lb = (r.labels || []).find(x => norm(x.name) === norm(lm[1]));
+    if (!lb) return { threads: [] };
+    lab = "&labelIds=" + encodeURIComponent(lb.id); q = q.replace(lm[0], "").trim();
+  }
+  const l = await gapi("GET", G + "threads?maxResults=" + n + lab + (q ? "&q=" + encodeURIComponent(q) : ""));
+  const items = l.threads || [], em = await myEmail(), out = []; let i = 0;
+  const hs = "&metadataHeaders=Subject&metadataHeaders=From&metadataHeaders=To&metadataHeaders=Cc&metadataHeaders=Date";
+  const clone = o => JSON.parse(JSON.stringify(o));
+  async function worker() {
+    while (i < items.length) {
+      const k = i++, it = items[k], c = tcache.get(it.id);
+      if (c && it.historyId && c.hid === it.historyId) { out[k] = clone(c.data); continue; }
+      const t = await gapi("GET", G + "threads/" + it.id + "?format=metadata" + hs);
+      const data = { id: t.id, messages: (t.messages || []).map(m => mapMsg(m, t.id, false)), viewUrl: threadUrl(em, t.id) };
+      if (it.historyId) { tcache.set(it.id, { hid: it.historyId, data: clone(data) }); if (tcache.size > 600) tcache.delete(tcache.keys().next().value); }
+      out[k] = data;
+    }
+  }
+  await Promise.all(Array.from({ length: 4 }, worker));
+  return { threads: out.filter(Boolean) };
+}
+async function getThread(a) {
+  const t = await gapi("GET", G + "threads/" + a.threadId + "?format=full"), em = await myEmail();
+  return { id: t.id, viewUrl: threadUrl(em, t.id), messages: (t.messages || []).map(m => mapMsg(m, t.id, true)) };
+}
+async function listLabels() {
+  const r = await gapi("GET", G + "labels");
+  return { labels: (r.labels || []).map(l => ({ labelId: l.id, name: l.name, labelType: l.type === "user" ? "USER" : "SYSTEM", color: l.color || null })) };
+}
+async function createLabel(a) {
+  const l = await gapi("POST", G + "labels", { name: a.name, labelListVisibility: "labelShow", messageListVisibility: "show" });
+  return { labelId: l.id, name: l.name, labelType: "USER" };
+}
+async function modify(a, add, rem) { await gapi("POST", G + "threads/" + a.threadId + "/modify", { addLabelIds: add || [], removeLabelIds: rem || [] }); return {}; }
+
+/* ---------- Réponse / brouillon (message MIME construit ici) ---------- */
+const enc = s => { let b = ""; new TextEncoder().encode(s).forEach(c => { b += String.fromCharCode(c); }); return btoa(b); };
+const wrap76 = s => s.replace(/.{1,76}/g, "$&\r\n").trimEnd();
+const b64u = s => s.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+async function signature() { try { const r = await gapi("GET", G + "settings/sendAs"); const p = (r.sendAs || []).find(x => x.isPrimary) || (r.sendAs || [])[0]; return (p && p.signature) || ""; } catch (e) { return ""; } }
+async function buildReply(a, replyAll) {
+  const mid0 = a.messageId || a.replyToMessageId;
+  const m = await gapi("GET", G + "messages/" + mid0 + "?format=metadata&metadataHeaders=Message-ID&metadataHeaders=References&metadataHeaders=Subject&metadataHeaders=From&metadataHeaders=To&metadataHeaders=Cc&metadataHeaders=Reply-To");
+  const em = (await myEmail()).toLowerCase();
+  const from = addrs(hdr(m, "From"))[0] || { email: "" };
+  const rt = addrs(hdr(m, "Reply-To"))[0] || from;
+  let to = [rt.email], cc = [];
+  if (from.email.toLowerCase() === em) to = addrs(hdr(m, "To")).map(x => x.email); // dernier message envoyé par moi
+  if (replyAll) cc = [...new Set([...addrs(hdr(m, "To")), ...addrs(hdr(m, "Cc"))].map(x => x.email).filter(e => e.toLowerCase() !== em && !to.includes(e)))];
+  let subj = hdr(m, "Subject"); if (!/^re:/i.test(subj)) subj = "Re: " + subj;
+  const id = hdr(m, "Message-ID"), refs = (hdr(m, "References") + " " + id).trim();
+  let html = "<div>" + esc(a.body || "").replace(/\r?\n/g, "<br>") + "</div>";
+  if (a.includeSignature) { const s = await signature(); if (s) html += "<br><div>" + s + "</div>"; }
+  const raw = ["To: " + to.join(", "), cc.length ? "Cc: " + cc.join(", ") : null, "Subject: =?UTF-8?B?" + enc(subj) + "?=", id ? "In-Reply-To: " + id : null, "References: " + refs, "MIME-Version: 1.0", "Content-Type: text/html; charset=UTF-8", "Content-Transfer-Encoding: base64", "", wrap76(enc("<html><body>" + html + "</body></html>"))].filter(x => x !== null).join("\r\n");
+  return { raw: b64u(btoa(raw)), threadId: m.threadId };
+}
+async function sendReply(a) { const msg = await buildReply(a, !!a.replyAll); await gapi("POST", G + "messages/send", msg); return {}; }
+async function createDraft(a) { const msg = await buildReply(a, false); const d = await gapi("POST", G + "drafts", { message: msg }); return d || {}; }
+
+/* ---------- Agenda ---------- */
+async function listEvents(a) {
+  const now = new Date(), sod = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const t0 = a.startTime ? new Date(a.startTime) : sod, t1 = a.endTime ? new Date(a.endTime) : new Date(+sod + 7 * 864e5);
+  const q = new URLSearchParams({ singleEvents: "true", orderBy: "startTime", timeMin: t0.toISOString(), timeMax: t1.toISOString(), maxResults: String(Math.min(a.pageSize || 30, 250)) });
+  if (a.pageToken) q.set("pageToken", a.pageToken);
+  const r = await gapi("GET", CAL + "?" + q.toString());
+  return { summary: r.summary, events: r.items || [], nextPageToken: r.nextPageToken };
+}
+
+/* ---------- Adaptateur « connecteurs » attendu par l'interface ---------- */
+const TOOLS = {
+  "Gmail": { search_threads: searchThreads, get_thread: getThread, list_labels: listLabels, create_label: createLabel,
+    label_thread: a => modify(a, a.labelIds, []), unlabel_thread: a => modify(a, [], a.labelIds),
+    reply: sendReply, create_draft: createDraft },
+  "Google Calendar": { list_events: listEvents }
+};
+async function call(server, tool, args) {
+  await ready;
+  try {
+    const f = (TOOLS[server] || {})[tool]; if (!f) throw new Error("Outil non pris en charge : " + tool);
+    return { payload: await f(args || {}) };
+  } catch (e) {
+    const msg = String((e && e.message) || e);
+    if (/SESSION_EXPIRED|Non connecté/.test(msg)) { needLogin(); throw { code: "needs_reauth", message: msg }; }
+    throw { code: "tool_error", message: msg };
+  }
+}
+function watchTool(server, tool, args, handler, opts) {
+  let stop = false;
+  const run = async () => { if (stop) return; try { handler({ type: "data", result: await call(server, tool, args) }); } catch (e) { handler({ type: "error", error: { code: e.code || "tool_error", message: e.message } }); } };
+  run();
+  const iv = opts && opts.refetchInterval ? setInterval(run, opts.refetchInterval) : null;
+  return () => { stop = true; if (iv) clearInterval(iv); };
+}
+const mcp = { callTool: (s, t, a) => call(s, t, a), watchTool, invalidate: async () => {} };
+window.claude = { use: async name => name === "mcp" ? (await ready, mcp) : null };
+
+/* ---------- Notifications Windows, liens, mises à jour ---------- */
+const notif = T.notification;
+if (notif) {
+  try { notif.isPermissionGranted().then(ok => { if (!ok) notif.requestPermission(); }); } catch (e) {}
+  window.Notification = class { constructor(title, o) { try { notif.sendNotification({ title, body: (o && o.body) || "" }); } catch (e) {} } static get permission() { return "granted"; } static requestPermission() { return Promise.resolve("granted"); } };
+}
+document.addEventListener("click", e => {
+  const a = e.target.closest && e.target.closest("a[href]"); if (!a) return;
+  if (/^https:\/\//i.test(a.href)) { e.preventDefault(); inv("open_external", { url: a.href }).catch(() => {}); }
+}, true);
+if (T.event) T.event.listen("update-status", ev => { if (window.toast) window.toast(String(ev.payload)); });
+
+const gear = el("button", "border:0;background:none;font-size:15px;cursor:pointer;padding:2px 6px", "⚙");
+gear.title = "Compte Google"; gear.onclick = () => showGate();
+const mb = document.querySelector("#mb"); if (mb) mb.insertBefore(gear, document.querySelector("#bell"));
+inv("google_status").then(s => { if (s.configured && s.connected) resolveReady(); else showGate(); }).catch(() => showGate());
+
+/* ---------- Mise à jour : au lancement (résultat affiché), puis toutes les 6 heures ---------- */
+const say = m => { if (window.toast) window.toast(m); };
+const checkUpdate = quiet => inv("check_update").then(m => { if (!quiet) say(m); }).catch(e => { if (!quiet) say("Mise à jour impossible : " + String(e).slice(0, 160)); });
+setTimeout(() => checkUpdate(false), 6000);
+setInterval(() => checkUpdate(true), 6 * 3600 * 1000);
+})();
+
+</script>
+<script>
+"use strict";
+const $=s=>document.querySelector(s);
+function h(t,a={},...k){const e=document.createElement(t);for(const[n,v]of Object.entries(a)){if(n==="class")e.className=v;else if(n.startsWith("on"))e.addEventListener(n.slice(2),v);else if(n==="text")e.textContent=v;else e.setAttribute(n,v)}k.flat().forEach(c=>c!=null&&e.append(c));return e}
+let CFG={},dbRef=null,dbT=null;
+const ld=(k,d)=>{if(k in CFG)return CFG[k]===undefined?d:CFG[k];try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch{return d}};
+const sv=(k,v)=>{CFG[k]=v;try{localStorage.setItem(k,JSON.stringify(v))}catch{}if(dbRef){clearTimeout(dbT);dbT=setTimeout(saveCfg,900)}};
+function saveCfg(){if(!dbRef)return;try{dbRef.set({cfg:JSON.stringify(CFG),ts:Date.now()}).catch(()=>{})}catch{}}
+function applyCfg(){tasks=ld("enviro.tasks",[]);migTasks();imp=ld("enviro.imp",{});mo=ld("enviro.mo",{rep:[],lire:[]});mg=ld("enviro.mg","inbox");tab=ld("enviro.tab","home");if(!TABS.some(t=>t.id===tab))tab="home";ag=ld("enviro.ag2","grid");gv=ld("enviro.gv","week");HL=ld("enviro.hl4",null);thm=ld("enviro.thm","auto");notif=ld("enviro.notif",false);setTheme(thm);bell();renderAll()}
+async function loadCfg(){try{
+  if(!window.claude)return;
+  const[db,u]=await Promise.all([window.claude.use("db"),window.claude.use("user")]);if(!db||!u)return;
+  const id=await u.id();if(!id)return;
+  const ref=db.doc("data/users/"+id+"/prefs"),sn=await ref.get(),d=sn.exists?sn.data():null;
+  if(d&&d.cfg){try{CFG=JSON.parse(d.cfg)}catch{}}
+  else{try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith("enviro.")){try{CFG[k]=JSON.parse(localStorage.getItem(k))}catch{}}}}catch{}}
+  dbRef=ref;if(!d)saveCfg();applyCfg()}catch{}}
+const dec=s=>new DOMParser().parseFromString(s||"","text/html").documentElement.textContent;
+
+const PR={1:"Urgent",2:"Important",3:"Normal"};
+const IMP=[{k:"crit",l:"Critique",c:"var(--p1)"},{k:"imp",l:"Important",c:"var(--p2)"},{k:"norm",l:"Normal",c:"var(--p3)"},{k:"opt",l:"Optionnel",c:"var(--p4)"}];
+const ERR={needs_reauth:"Session Google expirée : reconnecte-toi avec l’icône ⚙ en haut.",server_not_connected:"Connecte-toi à Google avec l’icône ⚙ en haut.",not_in_manifest:"Accès non autorisé pour cette page : rouvre-la pour le réautoriser.",blocked_by_policy:"Accès bloqué par la politique de ton organisation.",approval_required:"Autorisation requise.",selection_required:"Plusieurs connecteurs portent ce nom : choisis-en un dans claude.ai."};
+const AUTHZ=["needs_reauth","server_not_connected","not_in_manifest","blocked_by_policy","approval_required","selection_required"];
+const Q={mail:["Gmail","search_threads",{query:"in:inbox",pageSize:50,view:"THREAD_VIEW_MINIMAL"}],cal:["Google Calendar","list_events",{pageSize:30,orderBy:"startTime"}],rep:["Gmail","search_threads",{query:"label:à-répondre",pageSize:50,view:"THREAD_VIEW_MINIMAL"}],lire:["Gmail","search_threads",{query:"label:à-lire",pageSize:50,view:"THREAD_VIEW_MINIMAL"}],star:["Gmail","search_threads",{query:"is:starred",pageSize:50,view:"THREAD_VIEW_MINIMAL"}]};
+
+let tasks=ld("enviro.tasks",[]),imp=ld("enviro.imp",{}),mails=[],labels=[],lf="",ev3=[],sel="",events=[],st={mail:null,cal:null,rng:null,rep:null,lire:null,star:null},mcp=null,loaded={mail:false,cal:false,rng:false,rep:false,lire:false,star:false},lists={rep:[],lire:[],star:[]},mo=ld("enviro.mo",{rep:[],lire:[]}),mg=ld("enviro.mg","inbox"),curDay="";
+function migTasks(){if(!tasks.some(t=>t.prio!=null))return;tasks.sort((a,b)=>(a.done-b.done)||(a.prio-b.prio)||(a.ts-b.ts));tasks.forEach(t=>{delete t.prio});sv("enviro.tasks",tasks)}
+migTasks();
+const fDay=new Intl.DateTimeFormat("fr-FR",{weekday:"long",day:"numeric",month:"long"});
+const fHr=new Intl.DateTimeFormat("fr-FR",{hour:"2-digit",minute:"2-digit"});
+const fShort=new Intl.DateTimeFormat("fr-FR",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"});
+
+function toast(t){const e=$("#toast");e.textContent=t;e.style.display="block";clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display="none",4000)}
+const errTxt=e=>ERR[e&&e.code]||("Échec"+(e&&e.code?" ("+e.code+")":""));
+
+/* ---------- Navigation ---------- */
+const TABS=[{id:"home",l:"Accueil",i:"🏠"},{id:"cal",l:"Agenda",i:"🗓️"}];
+let tab=ld("enviro.tab","home"),ag=ld("enviro.ag2","grid"),owner="",fx=null,pn=null,selT=null,gd="",gv=ld("enviro.gv","week"),selEv="",nav=[],np=3,ot=null,th={},exp={},dr={},thm=ld("enviro.thm","auto"),notif=ld("enviro.notif",false),lastDrag=0,dOrder=ld("enviro.dock",[]),HL=ld("enviro.hl4",null);
+const au=()=>owner?"authuser="+encodeURIComponent(owner):"";
+const gmailUrl=()=>"https://mail.google.com/mail/?"+au()+"#inbox",composeUrl=()=>"https://mail.google.com/mail/?"+au()+"&view=cm&fs=1";
+const gcalUrl=()=>"https://calendar.google.com/calendar/r?"+au(),newEvUrl=()=>"https://calendar.google.com/calendar/r/eventedit?"+au();
+const DOCK=[...TABS,{id:"gmail",l:"Ouvrir Gmail (nouvel onglet)",i:"M",ex:gmailUrl},{id:"gcal",l:"Ouvrir Google Agenda (nouvel onglet)",i:"31",ex:gcalUrl}];
+const dockList=()=>[...DOCK].sort((a,b)=>{const x=dOrder.indexOf(a.id),y=dOrder.indexOf(b.id);return(x<0?99:x)-(y<0?99:y)});
+const lnk=(t,u,g)=>h("a",{class:"btn",href:u,target:g,text:t});
+if(!TABS.some(t=>t.id===tab))tab="home";
+const unread=()=>mails.filter(t=>{const m=(t.messages||[]).slice(-1)[0]||{};return(m.labelIds||[]).includes("UNREAD")});
+const snapN=()=>({tab,ag,ot,gd,y:window.scrollY});
+function go(id){if(id===tab)return;nav.push(snapN());if(nav.length>40)nav.shift();tab=id;fx=null;sv("enviro.tab",id);window.scrollTo(0,0);renderAll()}
+function back(){const p=nav.pop();if(!p)return;tab=p.tab;ag=p.ag;gd=p.gd||gd;fx=null;sv("enviro.tab",tab);renderAll();window.scrollTo(0,p.y)}
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!/INPUT|TEXTAREA|SELECT/.test((document.activeElement||{}).tagName||"")){if(pn)closePane();else if(nav.length)back()}});
+function clock(){const d=new Date();$("#clk").textContent=cap(fDay.format(d))+"  "+fHr.format(d)}
+function refreshAll(){if(!mcp)return;pull("mail");pull("cal");pull("rep");pull("lire");pull("star");pullRange(true)}
+const openT=()=>tasks.filter(t=>!t.done),rankC=i=>i<2?"var(--p1)":i<5?"var(--p2)":"var(--p3)",urgent=()=>openT().slice(0,2);
+const ICO={home:'<path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v10h13V10"/>',mail:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',tasks:'<rect x="4" y="4" width="16" height="16" rx="3"/><path d="m8.5 12.5 2.5 2.5 4.5-5"/>',cal:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',trash:'<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>'};
+function ico(n){const e=h("span",{class:"ico"});e.innerHTML='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">'+ICO[n]+'</svg>';return e}
+function renderTabs(){const d=$("#tabs");d.textContent="";
+  const n=tasks.filter(t=>!t.done).length,u=urgent().length,bd={mail:unread().length,tasks:n};
+  for(const t of TABS){const c=bd[t.id]||0;
+    d.append(h("button",{class:"tb2"+(tab===t.id?" on":""),title:t.l,"aria-label":t.l,onclick:()=>go(t.id)},ico(t.id),c?h("span",{class:"nb2"+(t.id==="tasks"&&u?" red":""),text:c>99?"99+":String(c)}):null))}
+  d.append(h("span",{class:"tsep"}),h("a",{class:"tb2 ex",title:"Ouvrir Gmail (nouvel onglet)","aria-label":"Ouvrir Gmail",href:gmailUrl(),target:"gmail"},ico("mail"),h("sup",{text:"↗"})),h("a",{class:"tb2 ex",title:"Ouvrir Google Agenda (nouvel onglet)","aria-label":"Ouvrir Google Agenda",href:gcalUrl(),target:"gcal"},ico("cal"),h("sup",{text:"↗"})));
+  document.title=(u?"("+u+") ":"")+"Enviro Travail"}
+function banner(){const u=urgent();return h("div",{class:"alert",title:"Voir les tâches",onclick:()=>go("home")},"⚠️ "+u.length+(u.length>1?" tâches prioritaires":" tâche prioritaire")+" : "+u.slice(0,2).map(t=>t.title).join(" · ")+(u.length>2?" …":""))}
+function bell(){const b=$("#bell");if(!("Notification" in window)){b.style.display="none";return}
+  const on=notif&&Notification.permission==="granted";b.textContent=on?"🔔":"🔕";b.title="Alerte navigateur pour les tâches urgentes : "+(on?"activée":"désactivée")}
+async function toggleBell(){try{
+  if(notif){notif=false;sv("enviro.notif",false);bell();return}
+  const p=Notification.permission==="granted"?"granted":await Notification.requestPermission();
+  if(p==="granted"){notif=true;sv("enviro.notif",true);toast("Alertes activées. La page doit rester ouverte.");notifyUrgent()}else toast("Notifications refusées ou indisponibles ici.");
+  bell()}catch{toast("Notifications indisponibles dans ce contexte.")}}
+function notifyUrgent(){if(!notif||!("Notification" in window)||Notification.permission!=="granted")return;
+  const u=urgent();if(!u.length)return;const key=dk(new Date())+":"+u.map(t=>t.id).sort().join(",");
+  if(ld("enviro.nk","")===key)return;sv("enviro.nk",key);
+  try{new Notification(u.length+(u.length>1?" tâches prioritaires":" tâche prioritaire"),{body:u.slice(0,3).map(t=>t.title).join(" · ")})}catch{}}
+function setTheme(v){thm=v;sv("enviro.thm",v);const r=document.documentElement;if(v==="auto")r.removeAttribute("data-theme");else r.setAttribute("data-theme",v);
+  const b=$("#thm");b.textContent=v==="auto"?"🌓":v==="light"?"☀️":"🌙";b.title="Thème : "+(v==="auto"?"automatique":v==="light"?"jour":"nuit")+" (cliquer pour changer)"}
+function card(t,id,key){const body=h("div",{class:"wb"});
+  body._sec=h("section",{class:"card w",id:"hc-"+key},h("div",{class:"wh"},h("h3",{text:t}),h("span",{class:"sp"}),RFK[key]?h("span",{class:"dt",text:lastOk[RFK[key]]?"màj "+fHr.format(lastOk[RFK[key]]):""}):null,RFK[key]?h("button",{title:"Actualiser cette liste",text:"↻",onclick:()=>pull(RFK[key])}):null,id==="cal"?h("button",{title:"Ouvrir l’agenda",text:"↗",onclick:()=>go("cal")}):null),body,h("div",{class:"rz"}));
+  return body}
+/* mise en page libre de l'accueil */
+function hDef(){const W=Math.max(300,($("#hb")||{}).clientWidth||1200),g=12;
+  if(W>=1000){const w=Math.floor((W-3*g)/4);return{su:{x:0,y:0,w,h:420},mr:{x:w+g,y:0,w,h:420},ml:{x:2*(w+g),y:0,w,h:420},tk:{x:3*(w+g),y:0,w,h:420},ev:{x:0,y:432,w,h:420},jr:{x:w+g,y:432,w:2*w+g,h:420},mb:{x:3*(w+g),y:432,w,h:260}}}
+  if(W>=700){const w=Math.floor((W-g)/2);return{su:{x:0,y:0,w,h:380},mr:{x:w+g,y:0,w,h:380},ml:{x:0,y:392,w,h:380},tk:{x:w+g,y:392,w,h:380},ev:{x:0,y:784,w,h:400},jr:{x:w+g,y:784,w,h:400},mb:{x:0,y:1196,w,h:260}}}
+  return{su:{x:0,y:0,w:W,h:340},mr:{x:0,y:352,w:W,h:340},ml:{x:0,y:704,w:W,h:340},tk:{x:0,y:1056,w:W,h:360},ev:{x:0,y:1428,w:W,h:300},jr:{x:0,y:1740,w:W,h:520},mb:{x:0,y:2272,w:W,h:260}}}
+function hFit(){const b=$("#hb");if(!b)return;let m=0;for(const k in HL)m=Math.max(m,HL[k].y+HL[k].h);b.style.height=(m+8)+"px"}
+function hPlace(id){const e=$("#hc-"+id),l=HL[id];if(!e||!l)return;e.style.left=l.x+"px";e.style.top=l.y+"px";e.style.width=l.w+"px";e.style.height=l.h+"px";e.style.zIndex=l.z||1;hFit()}
+function hFront(id){const ks=Object.keys(HL).sort((a,b)=>(HL[a].z||1)-(HL[b].z||1)).filter(k=>k!==id);ks.push(id);
+  ks.forEach((k,i)=>{HL[k].z=i+1;const e=$("#hc-"+k);if(e)e.style.zIndex=i+1})}
+function hSnap(id,mode){const l=HL[id],T=10,G=8,W=$("#hb").clientWidth;
+  const xs=[0],xe=[W],ys=[0],ye=[];
+  for(const k in HL){if(k===id)continue;const o=HL[k];xs.push(o.x,o.x+o.w+G);xe.push(o.x+o.w,o.x-G);ys.push(o.y,o.y+o.h+G);ye.push(o.y+o.h,o.y-G)}
+  const best=(p,list)=>{let d=null;for(const v of list){const e=v-p;if(Math.abs(e)<=T&&(d===null||Math.abs(e)<Math.abs(d)))d=e}return d};
+  const pick=(a,b)=>a===null?b:b===null?a:(Math.abs(a)<=Math.abs(b)?a:b);
+  if(mode==="move"){const dx=pick(best(l.x,xs),best(l.x+l.w,xe)),dy=pick(best(l.y,ys),best(l.y+l.h,ye));
+    if(dx!==null)l.x+=dx;if(dy!==null)l.y+=dy;l.x=Math.max(0,l.x);l.y=Math.max(0,l.y)}
+  else{const dx=best(l.x+l.w,xe),dy=best(l.y+l.h,ye);if(dx!==null)l.w=Math.max(240,l.w+dx);if(dy!==null)l.h=Math.max(160,l.h+dy)}}
+function hDrag(el,id,mode){
+  el.addEventListener("pointerdown",e=>{
+    if(e.target.closest("button,select,input,a"))return;
+    e.preventDefault();el.setPointerCapture(e.pointerId);hFront(id);dragging=true;
+    const l=HL[id],sx=e.clientX,sy=e.clientY,o={...l};
+    const mv=ev=>{const dx=ev.clientX-sx,dy=ev.clientY-sy;
+      if(mode==="move"){l.x=Math.max(0,o.x+dx);l.y=Math.max(0,o.y+dy)}else{l.w=Math.max(240,o.w+dx);l.h=Math.max(160,o.h+dy)}
+      if(!ev.altKey)hSnap(id,mode);hPlace(id)};
+    const up=()=>{el.removeEventListener("pointermove",mv);el.removeEventListener("pointerup",up);el.removeEventListener("pointercancel",up);sv("enviro.hl4",HL);dragging=false;flushR()};
+    el.addEventListener("pointermove",mv);el.addEventListener("pointerup",up);el.addEventListener("pointercancel",up)})}
+function addRow(){const inp=h("input",{placeholder:"Nouvelle tâche (ajoutée en bas de la liste)…"});
+  const submit=()=>{const v=inp.value.trim();if(!v)return;inp.value="";tasks.push({id:"t"+Date.now(),title:v,from:"",url:"",st:"",done:false,ts:Date.now()});sv("enviro.tasks",tasks);renderAll()};
+  inp.addEventListener("keydown",e=>{if(e.key==="Enter")submit()});
+  const nd=tasks.filter(t=>t.done).length;let arm=0;
+  const minus=h("button",{text:"−",title:nd?"Supprimer les "+nd+" tâche(s) terminée(s)":"Aucune tâche terminée à supprimer"});
+  if(!nd)minus.disabled=true;
+  minus.onclick=()=>{if(!arm){arm=1;minus.textContent="Supprimer "+nd+" ?";minus.classList.add("danger");setTimeout(()=>{if(!minus.isConnected)return;arm=0;minus.textContent="−";minus.classList.remove("danger")},4000);return}
+    tasks=tasks.filter(t=>!t.done);selT=null;sv("enviro.tasks",tasks);renderAll()};
+  return h("div",{class:"add"},inp,h("button",{text:"+",title:"Ajouter",onclick:submit}),minus)}
+let dragging=false,pendingR=false,lastOk={};
+const RFK={mr:"rep",ml:"lire",su:"star",mb:"mail",ev:"cal"};
+function flushR(){if(pendingR){pendingR=false;renderAll()}}
+function editTask(t,box){
+  const inp=h("input",{class:"ed",value:t.title});let fin=false;
+  const done=save=>{if(fin)return;fin=true;const v=inp.value.trim();if(save&&v){t.title=v;sv("enviro.tasks",tasks)}inp.value="";renderAll()};
+  inp.addEventListener("keydown",e=>{if(e.key==="Enter")done(true);else if(e.key==="Escape"){e.stopPropagation();done(false)}});
+  inp.addEventListener("blur",()=>done(true));
+  box.textContent="";box.append(inp);inp.focus();inp.select()}
+function sortable(list,sel,onDrop,own,onCross){
+  list.querySelectorAll(sel).forEach(row=>{
+    row.addEventListener("pointerdown",e=>{
+      if(e.button!==0||e.target.closest("button,input,select,a,textarea"))return;
+      const sx=e.clientX,sy=e.clientY;let on=false,gh=null;
+      try{row.setPointerCapture(e.pointerId)}catch{}
+      const target=ev=>own?document.elementsFromPoint(ev.clientX,ev.clientY).find(x=>x.dataset&&x.dataset.drop&&x.dataset.drop!==own):null;
+      const mv=ev=>{const dx=ev.clientX-sx,dy=ev.clientY-sy;
+        if(!on&&Math.hypot(dx,dy)>6){on=true;dragging=true;
+          if(own){const r=row.getBoundingClientRect();gh=row.cloneNode(true);gh.classList.add("gh-drag");gh.style.cssText="position:fixed;left:"+r.left+"px;top:"+r.top+"px;width:"+r.width+"px;z-index:9999;pointer-events:none;opacity:.93;box-shadow:0 8px 24px rgba(0,0,0,.3);background:var(--card);border-radius:8px";document.body.append(gh);row.style.opacity=".35"}
+          else row.classList.add("drag")}
+        if(!on)return;
+        if(gh){gh.style.transform="translate("+dx+"px,"+dy+"px)";document.querySelectorAll(".dz").forEach(x=>x.classList.remove("dz"));const tg=target(ev);if(tg)tg.classList.add("dz")}
+        else row.style.transform="translateY("+dy+"px)"};
+      const up=ev=>{row.removeEventListener("pointermove",mv);row.removeEventListener("pointerup",up);row.removeEventListener("pointercancel",up);
+        document.querySelectorAll(".dz").forEach(x=>x.classList.remove("dz"));
+        dragging=false;
+        if(!on){flushR();return}
+        if(gh)gh.remove();row.style.opacity="";row.classList.remove("drag");row.style.transform="";
+        const tg=target(ev);
+        if(tg&&onCross){const rows=[...tg.querySelectorAll(sel)];let i=rows.findIndex(o=>{const r=o.getBoundingClientRect();return ev.clientY<r.top+r.height/2});if(i<0)i=rows.length;onCross(row.dataset.id,tg.dataset.drop,i);return}
+        const others=[...list.querySelectorAll(sel)].filter(x=>x!==row);
+        let i=others.findIndex(o=>{const r=o.getBoundingClientRect();return ev.clientY<r.top+r.height/2});if(i<0)i=others.length;
+        const ids=others.map(o=>o.dataset.id);ids.splice(i,0,row.dataset.id);onDrop(ids)};
+      row.addEventListener("pointermove",mv);row.addEventListener("pointerup",up);row.addEventListener("pointercancel",up)})})}
+let lastClk={id:"",t:0};
+function taskRow(t,i,full){
+  const cb=h("input",{type:"checkbox",onchange:()=>{t.done=cb.checked;sv("enviro.tasks",tasks);renderAll()}});cb.checked=t.done;
+  const lab=t.st==="cours"?"en cours":t.st==="verif"?"à vérifier":"";
+  const sb=h("button",{class:"st"+(lab?" on "+t.st:""),title:"Statut : en cours / à vérifier",text:lab||"statut",onclick:e=>{e.stopPropagation();t.st=t.st==="cours"?"verif":t.st==="verif"?"":"cours";sv("enviro.tasks",tasks);renderAll()}});
+  const row=h("div",{class:"tk lk"+(t.done?" done":"")+(full&&selT===t.id?" on":""),"data-id":t.id,title:"Double-clic pour modifier",style:"border-left:4px solid "+(t.done?"var(--bd)":rankC(i))+";padding-left:8px",
+    onclick:e=>{if(e.target.closest("button,input,a"))return;const n=Date.now();
+      if(lastClk.id===t.id&&n-lastClk.t<450){lastClk={id:"",t:0};editTask(t,row.querySelector(".tb"));return}
+      lastClk={id:t.id,t:n};if(full){selT=selT===t.id?null:t.id;renderAll()}}},
+    cb,h("div",{class:"tb"},h("div",{class:"tl",text:t.title}),t.from?h("div",{class:"sn",text:t.from}):null),sb);
+  return row}
+function taskList(parent,full){
+  const box=h("div",{});openT().forEach((t,i)=>box.append(taskRow(t,i,full)));tasks.filter(t=>t.done).forEach(t=>box.append(taskRow(t,-1,full)));
+  parent.append(box);
+  sortable(box,".tk:not(.done)",ids=>{const m=new Map(tasks.map(t=>[t.id,t]));tasks=[...ids.map(id=>m.get(id)),...tasks.filter(t=>t.done)];sv("enviro.tasks",tasks);renderAll()})}
+function squares(now){
+  const by={};for(const e of ev3)for(const k of evDays(e))(by[k]=by[k]||[]).push(e);
+  const td=dk(now),t0=new Date(now.getFullYear(),now.getMonth(),now.getDate()),end=new Date(now.getFullYear(),now.getMonth()+3,0);
+  const st=new Date(t0);st.setDate(st.getDate()-((st.getDay()+6)%7));
+  const nW=Math.ceil((Math.round((end-st)/864e5)+1)/7),cols="16px repeat("+nW+",1fr)";
+  const ml=h("div",{class:"sqm"}),g=h("div",{class:"sqg"}),fm=new Intl.DateTimeFormat("fr-FR",{month:"short"});
+  ml.style.gridTemplateColumns=cols;g.style.gridTemplateColumns=cols;ml.append(h("span"));
+  for(const d of ["L","M","M","J","V","S","D"])g.append(h("span",{class:"sqd",text:d}));
+  let nc=0,ni=0,nx="";
+  for(let w=0;w<nW;w++){
+    const mon=new Date(st);mon.setDate(st.getDate()+7*w);
+    ml.append(h("span",{text:(w===0||mon.getDate()<=7)?fm.format(mon):""}));
+    for(let r=0;r<7;r++){const d=new Date(mon);d.setDate(mon.getDate()+r);
+      if(d>end){g.append(h("span"));continue}
+      const key=dk(d),es=by[key]||[],past=d<t0;
+      const lv=es.some(e=>imp[e.id]==="crit")?"crit":es.some(e=>imp[e.id]==="imp")?"imp":"";
+      if(lv&&!past){if(lv==="crit")nc++;else ni++;if(!nx)nx=d}
+      g.append(h("button",{class:"sq"+(lv?" "+lv:"")+(key===td?" today":"")+(past?" past":"")+(d.getMonth()%2?" odd":""),
+        title:fDay.format(d)+(es.length?"\n"+es.map(e=>e.summary||"(sans titre)").join("\n"):"")+"\n(double-clic pour ouvrir)",
+        ondblclick:()=>{sel=key;openPane("day",key)}}))}}
+  const sq=h("div",{class:"sqw"},
+    h("div",{class:"lg"},h("span",{class:"badge b1",text:nc+(nc>1?" jours critiques":" jour critique")}),h("span",{class:"badge b2",text:ni+(ni>1?" jours importants":" jour important")}),
+      h("span",{text:nx?"Prochain : "+fDay.format(nx):"Aucun jour important à venir."})),ml,g);
+  const isI=e=>imp[e.id]==="crit"||imp[e.id]==="imp",jl=h("div",{class:"jl"});
+  const ks=Object.keys(by).filter(k=>k>=td&&by[k].some(isI)).sort();
+  if(!ks.length)jl.append(h("div",{class:"msg",text:"Aucun événement important étiqueté à venir."}));
+  for(const k of ks){jl.append(h("div",{class:"day lk",text:cap(fDay.format(pd(k))),onclick:()=>{sel=k;openPane("day",k)}}));
+    by[k].filter(isI).sort((a,c)=>sdt(a)-sdt(c)).forEach(e=>jl.append(evLite(e)))}
+  return h("div",{class:"jr"},sq,jl)}
+function evLite(e){const s=e.start||{},d=new Date(s.dateTime||(s.date+"T00:00:00")),c=IMP.find(i=>i.k===imp[e.id])||{c:"var(--bd)"};
+  return h("div",{class:"ev lk",title:"Voir dans l’agenda",onclick:()=>openEv(e),style:"border-left-color:"+c.c},h("span",{class:"tm",text:s.dateTime?fShort.format(d):fDay.format(d)}),h("span",{class:"tt",text:e.summary||"(sans titre)"}))}
+function rHome(b){b.textContent="";
+  const hb=h("div",{id:"hb"}),now=new Date();b.append(hb);
+  const c1=card("Prochains événements","cal","ev");
+  if(!stateMsg("cal",c1)){
+    const en=e=>new Date((e.end||e.start||{}).dateTime||(((e.end||e.start||{}).date||"")+"T00:00:00"));
+    const up=events.filter(e=>en(e)>now).slice(0,5);
+    if(!up.length)c1.append(h("div",{class:"msg",text:"Rien de prévu cette semaine."}));
+    up.forEach(e=>c1.append(evLite(e)))}
+  const c3=card("Jours importants","cal","jr");
+  if(!stateMsg("rng",c3))c3.append(squares(now));
+  const c2=card("Tâches","tasks","tk");
+  c2.append(addRow(),taskTools());
+  if(!tasks.length)c2.append(h("div",{class:"msg",text:"Aucune tâche."}));
+  taskList(c2,true);
+  const c4=card("Boîte de réception","mail","mb");
+  if(!stateMsg("mail",c4)){const u=unread();
+    c4.append(h("div",{class:"big",text:String(u.length)}),h("div",{class:"dt",text:(u.length>1?"non lus":"non lu")+" parmi les "+mails.length+" derniers"}));
+    u.slice(0,3).forEach(t=>{const m=(t.messages||[]).slice(-1)[0]||{};c4.append(h("div",{class:"it lk",title:"Voir dans les mails",onclick:()=>openMail(t)},h("div",{class:"sd",text:m.sender||""}),h("div",{class:"sj",text:m.subject||"(sans objet)"})))})}
+  const c5=card("Mails à répondre","mail","mr");mailList(c5,"rep");
+  const c6=card("Mails à lire","mail","ml");mailList(c6,"lire");
+  const c7=card("Mails suivis (étoile Gmail)","mail","su");mailList(c7,"star");
+  const bs=[["su",c7],["mr",c5],["ml",c6],["tk",c2],["ev",c1],["jr",c3],["mb",c4]];
+  for(const[,c]of bs)hb.append(c._sec);
+  if(!HL)HL=hDef();const dd=hDef();for(const[k]of bs)if(!HL[k])HL[k]=dd[k];
+  for(const[k,c]of bs){hPlace(k);c._sec.addEventListener("pointerdown",()=>{hFront(k);sv("enviro.hl4",HL)},true);hDrag(c._sec.querySelector(".wh"),k,"move");hDrag(c._sec.querySelector(".rz"),k,"size")}}
+function renderAll(){if(dragging){pendingR=true;return}pendingR=false;document.querySelectorAll(".gh-drag").forEach(x=>x.remove());const ae=document.activeElement;if(ae&&ae.matches&&ae.matches("#app .add input,#app textarea,#app input.ed")&&ae.value)return;const app=$("#app");app.textContent="";
+  const T=TABS.find(t=>t.id===tab);
+  const hd=h("div",{class:"vh"},h("h2",{text:tab==="home"?"ARTFX - Chez Ouam":T.l}));
+  if(tab==="cal"){const sg=h("div",{class:"seg"});
+    for(const[k,l]of[["grid","Planning"],["week","Liste"],["focus","Essentiel"],["range","3 mois"]])sg.append(h("button",{class:ag===k?"on":"",text:l,onclick:()=>{if(ag===k)return;nav.push(snapN());ag=k;sv("enviro.ag2",k);renderAll()}}));
+    hd.append(sg)}
+  if(tab==="mail"){const sg=h("div",{class:"seg"});
+    for(const[k,l]of[["inbox","Boîte de réception"],["rep","À répondre"+(lists.rep.length?" ("+lists.rep.length+")":"")],["lire","À lire"+(lists.lire.length?" ("+lists.lire.length+")":"")]])sg.append(h("button",{class:mg===k?"on":"",text:l,onclick:()=>{if(mg===k)return;mg=k;sv("enviro.mg",k);renderAll()}}));
+    hd.append(sg)}
+  if(tab==="mail")hd.append(lnk("✎ Nouveau mail",composeUrl(),"gmail"),lnk("Ouvrir Gmail ↗",gmailUrl(),"gmail"));
+  if(tab==="cal")hd.append(lnk("+ Événement",newEvUrl(),"gcal"),lnk("Ouvrir Agenda ↗",gcalUrl(),"gcal"));
+  if(tab==="tasks")hd.append(taskTools());
+  if(tab!=="tasks")hd.append(h("button",{title:"Actualiser",text:"↻",onclick:refreshAll}));
+  if(nav.length)hd.prepend(h("button",{class:"btn",title:"Retour",text:"‹ Retour",onclick:back}));
+  const box=h("div",{class:tab==="home"?"":"panel"});const mc=h("div",{class:"mainc"});if(urgent().length&&tab!=="tasks"&&tab!=="home")mc.append(banner());mc.append(hd,box);app.append(mc);
+  if(pn){const pb=h("div",{class:"mb2"}),bg=h("div",{class:"mbg",onclick:e=>{if(e.target===bg)closePane()}},h("div",{class:"mdl"+(pn.k==="mail"?" wide":"")},h("div",{class:"ph"},h("b",{text:paneTitle()}),h("span",{style:"flex:1"}),h("button",{class:"btn",title:"Fermer (Échap)","aria-label":"Fermer",text:"×",onclick:closePane})),pb));app.append(bg);rPane(pb)}
+  ({home:rHome,mail:rMail,tasks:rTasks,cal:ag==="grid"?rGrid:ag==="week"?rCal:ag==="focus"?rFocus:rRange})[tab](box);
+  renderTabs();notifyUrgent();
+  if(fx){const el=$(".hl");if(el)el.scrollIntoView({block:"center",behavior:"smooth"});
+    clearTimeout(renderAll.t);renderAll.t=setTimeout(()=>{fx=null;document.querySelectorAll(".hl").forEach(x=>x.classList.remove("hl"))},3000)}}
+function dayTick(){const t=dk(new Date());if(!curDay)curDay=t;
+  if(t!==curDay){const old=curDay;curDay=t;if(gd===old||!gd)gd=t;if(mcp)pullRange(true);renderAll()}
+  else if(tab==="cal"&&ag==="grid"&&!pn)renderAll()}
+function build(){gd=dk(new Date());curDay=gd;window.addEventListener("focus",()=>{if(Date.now()-(window.__fr||0)>20000){window.__fr=Date.now();refreshAll()}});setInterval(dayTick,60000);document.addEventListener("visibilitychange",()=>{if(!document.hidden){dayTick();clock()}});setTheme(thm);$("#thm").onclick=()=>setTheme(thm==="auto"?"light":thm==="light"?"dark":"auto");$("#bell").onclick=toggleBell;bell();renderAll();clock();setInterval(clock,30000)}
+
+/* ---------- Mails ---------- */
+function pbtn(n,t){return h("button",{class:"pb p"+n,title:"Ajouter aux tâches : "+PR[n],text:"P"+n,onclick:()=>addTask(t,n)})}
+function stateMsg(k,b){const e=st[k];
+  if(!mcp){b.append(h("div",{class:"msg",text:"Connexion à Google en attente…"}));return true}
+  if(e){b.append(h("div",{class:"msg",text:errTxt(e)}));
+    if(e.code==="approval_required")b.append(h("button",{text:"Autoriser",onclick:()=>pull(k)}));
+    return AUTHZ.includes(e.code)}
+  if(!loaded[k]){b.append(h("div",{class:"msg",text:"Chargement…"}));return true}
+  return false}
+function rMail(b){b.textContent="";
+  if(mg==="rep"){mailList(b,"rep");return}
+  if(mg==="lire"){mailList(b,"lire");return}
+  if(stateMsg("mail",b))return;
+  const fs=h("select",{onchange:()=>{lf=fs.value;renderAll()}},h("option",{value:"",text:"Toutes les étiquettes"}),h("option",{value:"-",text:"Sans étiquette"}),...labels.map(x=>h("option",{value:x.labelId,text:x.name})));
+  fs.value=lf;
+  b.append(h("div",{class:"add"},fs));
+  const vis=mails.filter(t=>{const ls=lbOf(t);return lf===""||(lf==="-"?!ls.length:ls.includes(lf))});
+  if(!vis.length){b.append(h("div",{class:"msg",text:mails.length?"Aucun mail avec ce filtre parmi les derniers reçus.":"Boîte de réception vide."}));return}
+  for(const t of vis){const ms=t.messages||[],m=ms[ms.length-1]||{};
+    const inT=tasks.find(x=>x.threadId===t.id);
+    const unr=(m.labelIds||[]).includes("UNREAD");
+    const d=m.date?fShort.format(new Date(m.date)):"";
+    b.append(h("div",{class:"it lk"+(unr?" unr":"")+(fx&&fx.k==="mail"&&fx.id===t.id?" hl":""),onclick:e=>{if(e.target.closest("button,a,select,input"))return;openMail(t)}},
+      h("div",{class:"r1"},h("span",{class:"sd",text:m.sender||"—"}),h("span",{class:"dt",text:d})),
+      h("div",{class:"sj"},m.subject||"(sans objet)"),
+      h("div",{class:"sn",text:dec(m.snippet)}),
+      h("div",{class:"act"},
+        h("button",{class:"btn sm",text:"Lire / Répondre",onclick:()=>openMail(t)}),tagBtn(t,"rep"),tagBtn(t,"lire"),
+        h("button",{text:"Archiver",onclick:()=>archive(t)}),
+        lsel(t)),
+      lbOf(t).length?h("div",{class:"act"},lbOf(t).map(i=>chip(i))):null))}}
+async function archive(t){
+  try{await mcp.callTool("Gmail","unlabel_thread",{threadId:t.id,labelIds:["INBOX"]});
+    mails=mails.filter(x=>x.id!==t.id);renderAll();mcp.invalidate("Gmail","search_threads").catch(()=>{});toast("Mail archivé")}
+  catch(e){toast("Archivage impossible : "+errTxt(e))}}
+
+/* ---------- Tâches ---------- */
+function addTask(t,prio){const m=(t.messages||[]).slice(-1)[0]||{};
+  const ex=tasks.find(x=>x.threadId===t.id);
+  if(ex){ex.prio=prio;ex.done=false}
+  else tasks.push({id:"t"+Date.now(),threadId:t.id,title:m.subject||"(sans objet)",from:m.sender||"",url:t.viewUrl||"",prio,done:false,ts:Date.now()});
+  sv("enviro.tasks",tasks);renderAll()}
+/* ---------- Agenda ---------- */
+function rCal(b){b.textContent="";
+  if(stateMsg("cal",b))return;
+  if(!events.length){b.append(h("div",{class:"msg",text:"Aucun événement à venir."}));return}
+  let last="";
+  for(const e of events){const s=e.start||{},raw=s.dateTime||s.date;if(!raw)continue;
+    const d=new Date(raw),dl=fDay.format(d);
+    if(dl!==last){b.append(h("div",{class:"day",text:dl}));last=dl}
+    const cur=imp[e.id]||"",c=IMP.find(i=>i.k===cur)||{c:"var(--bd)"};
+    const sl=h("select",{onchange:()=>{if(sl.value)imp[e.id]=sl.value;else delete imp[e.id];sv("enviro.imp",imp);renderAll()}},h("option",{value:"",text:"Non étiqueté"}),...IMP.map(i=>h("option",{value:i.k,text:i.l})));
+    sl.value=cur;
+    let tm="Journée";if(s.dateTime){tm=fHr.format(d);if(e.end&&e.end.dateTime)tm+=" – "+fHr.format(new Date(e.end.dateTime))}
+    const row=h("div",{class:"ev lk"+(fx&&fx.k==="ev"&&fx.id===e.id?" hl":""),style:"border-left-color:"+c.c,onclick:ev=>{if(ev.target.closest("a,select"))return;openEv(e)}},
+      h("span",{class:"tm",text:tm}),
+      h("span",{class:"tt"},e.htmlLink?h("a",{href:e.htmlLink,target:"gcal",text:e.summary||"(sans titre)"}):(e.summary||"(sans titre)")),sl);
+    b.append(row)}}
+
+function rFocus(b){b.textContent="";
+  if(stateMsg("cal",b))return;
+  const tg=events.filter(e=>imp[e.id]&&((e.start||{}).dateTime||(e.start||{}).date));
+  if(!tg.length){b.append(h("div",{class:"msg",text:"Aucun événement étiqueté. Choisis une importance dans le widget Agenda."}));return}
+  for(const e of tg){const s=e.start,d=new Date(s.dateTime||s.date),c=IMP.find(i=>i.k===imp[e.id])||IMP[2];
+    b.append(h("div",{class:"ev lk",style:"border-left-color:"+c.c,onclick:ev=>{if(ev.target.closest("a,select"))return;openEv(e)}},
+      h("span",{class:"tm",text:s.dateTime?fShort.format(d):fDay.format(d)}),
+      h("span",{class:"tt"},e.htmlLink?h("a",{href:e.htmlLink,target:"gcal",text:e.summary||"(sans titre)"}):(e.summary||"(sans titre)")),
+      h("span",{class:"badge",style:"background:"+c.c,text:c.l})))}}
+
+/* ---------- Vue 3 mois ---------- */
+const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
+const dk=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+function evDays(e){const s=e.start||{};
+  if(s.dateTime)return[dk(new Date(s.dateTime))];
+  if(!s.date)return[];
+  const[y,m,d]=s.date.split("-").map(Number),a=new Date(y,m-1,d);let z=a;
+  if(e.end&&e.end.date){const[y2,m2,d2]=e.end.date.split("-").map(Number);z=new Date(y2,m2-1,d2)}
+  const o=[];for(let c=new Date(a),i=0;c<z&&i<31;c.setDate(c.getDate()+1),i++)o.push(dk(c));
+  return o.length?o:[dk(a)]}
+async function pullRange(refresh){
+  const n=new Date(),pad=x=>String(x).padStart(2,"0"),f=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())+"T00:00:00";
+  const a=new Date(n.getFullYear(),n.getMonth(),n.getDate()-((n.getDay()+6)%7)),z=new Date(n.getFullYear(),n.getMonth()+3,1);
+  try{let all=[],tok="";
+    for(let i=0;i<4;i++){
+      const args={startTime:f(a),endTime:f(z),orderBy:"startTime",pageSize:250};if(tok)args.pageToken=tok;
+      const r=await mcp.callTool("Google Calendar","list_events",args,refresh?{cache:{refresh:true}}:{});
+      const p=r&&r.payload;if(!p||typeof p!=="object")break;if(p.summary)owner=p.summary;
+      all=all.concat((p.events||[]).filter(e=>e.status!=="cancelled"));tok=p.nextPageToken||"";if(!tok)break}
+    ev3=all;st.rng=null;loaded.rng=true;lastOk.rng=new Date();renderAll()}
+  catch(e){softErr("rng",e&&e.code?e:{code:"tool_error",message:String(e)})}}
+function evRow(e,op){const s=e.start||{},d=new Date(s.dateTime||(s.date+"T00:00:00"));
+  const cur=imp[e.id]||"",c=IMP.find(i=>i.k===cur)||{c:"var(--bd)"};
+  const sl=h("select",{onchange:()=>{if(sl.value)imp[e.id]=sl.value;else delete imp[e.id];sv("enviro.imp",imp);renderAll()}},h("option",{value:"",text:"Non étiqueté"}),...IMP.map(i=>h("option",{value:i.k,text:i.l})));
+  sl.value=cur;
+  return h("div",{class:"ev"+(op?" lk":""),style:"border-left-color:"+c.c,...(op?{onclick:ev=>{if(ev.target.closest("a,select"))return;openEv(e)}}:{})},h("span",{class:"tm",text:s.dateTime?fHr.format(d):"Journée"}),
+    h("span",{class:"tt"},e.htmlLink?h("a",{href:e.htmlLink,target:"gcal",text:e.summary||"(sans titre)"}):(e.summary||"(sans titre)")),sl)}
+function rRange(b){b.textContent="";
+  if(stateMsg("rng",b))return;
+  const by={};for(const e of ev3)for(const k of evDays(e))(by[k]=by[k]||[]).push(e);
+  const now=new Date(),td=dk(now);let nc=0,ni=0,nx="";
+  const wrap=h("div",{class:"months"});
+  for(let i=0;i<3;i++){const m0=new Date(now.getFullYear(),now.getMonth()+i,1);
+    const g=h("div",{class:"mg"});
+    for(const d of ["L","M","M","J","V","S","D"])g.append(h("div",{class:"dh",text:d}));
+    for(let k=0,off=(m0.getDay()+6)%7;k<off;k++)g.append(h("div"));
+    const n=new Date(m0.getFullYear(),m0.getMonth()+1,0).getDate();
+    for(let d=1;d<=n;d++){const c=new Date(m0.getFullYear(),m0.getMonth(),d),key=dk(c),es=by[key]||[];
+      const lv=es.some(e=>imp[e.id]==="crit")?"crit":es.some(e=>imp[e.id]==="imp")?"imp":"",past=key<td;
+      if(lv&&!past){if(lv==="crit")nc++;else ni++;if(!nx)nx=key}
+      g.append(h("button",{class:"dc"+(lv?" "+lv:"")+(key===td?" today":"")+(key===sel?" sel":"")+(past?" past":""),title:es.map(e=>e.summary||"").join("\n"),text:String(d),onclick:()=>{sel=key;openPane("day",key)}}))}
+    wrap.append(h("div",{class:"mo"},h("div",{class:"mt",text:cap(new Intl.DateTimeFormat("fr-FR",{month:"long",year:"numeric"}).format(m0))}),g))}
+  const nxt=nx?(()=>{const[y,m,d]=nx.split("-").map(Number);return "Prochain : "+fDay.format(new Date(y,m-1,d))})():"Aucun jour important à venir.";
+  b.append(h("div",{class:"lg"},h("span",{class:"badge b1",text:nc+(nc>1?" jours critiques":" jour critique")}),h("span",{class:"badge b2",text:ni+(ni>1?" jours importants":" jour important")}),h("span",{text:nxt})),wrap);
+  if(false){const es=by[sel]||[],[y,m,d]=sel.split("-").map(Number);
+    const p=h("div",{class:"dp"+(fx&&fx.k==="dp"?" hl":"")},h("div",{class:"day",text:fDay.format(new Date(y,m-1,d))}));
+    if(!es.length)p.append(h("div",{class:"msg",text:"Rien ce jour-là."}));
+    for(const e of es)p.append(evRow(e,true));
+    b.append(p)}}
+
+/* ---------- Volet de droite ---------- */
+const sdt=e=>new Date((e.start||{}).dateTime||(((e.start||{}).date||"")+"T00:00:00"));
+const evById=id=>ev3.find(e=>e.id===id)||events.find(e=>e.id===id);
+function openPane(k,id){pn={k,id};ot=k==="mail"?id:null;if(k==="mail")loadThread(id);renderAll()}
+function closePane(){pn=null;ot=null;renderAll()}
+function paneTitle(){return pn.k==="mail"?"Mail":pn.k==="ev"?"Événement":pn.k==="day"?cap(fDay.format(pd(pn.id))):"Tâche"}
+function rPane(b){if(!({mail:1,ev:1,day:1})[pn.k]){pn=null;return}({mail:rThread,ev:rEvPane,day:rDayPane})[pn.k](b)}
+function impSel(e){const sl=h("select",{onchange:()=>{if(sl.value)imp[e.id]=sl.value;else delete imp[e.id];sv("enviro.imp",imp);renderAll()}},h("option",{value:"",text:"Non étiqueté"}),...IMP.map(i=>h("option",{value:i.k,text:i.l})));sl.value=imp[e.id]||"";return sl}
+function evTime(e){const s=e.start||{};if(!s.dateTime)return"Journée";return fHr.format(new Date(s.dateTime))+" – "+fHr.format(new Date((e.end||{}).dateTime||s.dateTime))}
+function rEvPane(b){const e=evById(pn.id);
+  if(!e){b.append(h("div",{class:"msg",text:"Événement introuvable."}));return}
+  const k=evDays(e)[0]||dk(new Date());
+  b.append(h("h3",{class:"th-s",text:e.summary||"(sans titre)"}),h("div",{class:"sn",text:cap(fDay.format(pd(k)))+" · "+evTime(e)}));
+  if(e.location)b.append(h("div",{class:"sn",text:"Lieu : "+e.location}));
+  b.append(h("div",{class:"act"},h("span",{class:"dt",text:"Importance :"}),impSel(e)),
+    h("div",{class:"act"},h("button",{class:"btn sm",text:"Voir dans le planning",onclick:()=>toPlanning(k,e.id)}),e.htmlLink?h("a",{class:"btn sm",href:e.htmlLink,target:"gcal",text:"Google Agenda ↗"}):null));
+  const es=ev3.filter(x=>evDays(x).includes(k)&&x.id!==e.id).sort((a,c)=>sdt(a)-sdt(c));
+  if(es.length){b.append(h("div",{class:"day",text:"Ce jour-là"}));es.forEach(x=>b.append(evLite(x)))}}
+function rDayPane(b){const k=pn.id,es=ev3.filter(e=>evDays(e).includes(k)).sort((a,c)=>sdt(a)-sdt(c));
+  b.append(h("div",{class:"act"},h("button",{class:"btn sm",text:"Voir dans le planning",onclick:()=>toPlanning(k,"")})));
+  if(!es.length)b.append(h("div",{class:"msg",text:"Rien ce jour-là."}));
+  es.forEach(e=>b.append(evRow(e,true)))}
+function taskTools(){const t=tasks.find(x=>x.id===selT),w=h("span",{class:"tctl tt"});
+  w.append(h("span",{class:"dt",text:t?"Sélection :":"Clique une tâche pour la modifier, la monter ou la supprimer"}));
+  const ed=h("button",{class:"btn sm",title:"Modifier le texte (ou double-clic sur la tâche)",text:"Modifier",onclick:()=>{const el=document.querySelector('.tk[data-id="'+selT+'"] .tb');if(t&&el)editTask(t,el)}});if(!t)ed.disabled=true;w.append(ed);
+  const mvT=d=>{const o=openT(),i=o.findIndex(x=>x.id===selT),j=i+d;if(i<0||j<0||j>=o.length)return;[o[i],o[j]]=[o[j],o[i]];tasks=[...o,...tasks.filter(x=>x.done)];sv("enviro.tasks",tasks);renderAll()};
+  for(const[l,d,ti]of[["▲",-1,"Monter"],["▼",1,"Descendre"]]){const bt=h("button",{class:"btn sm",title:ti,text:l,onclick:()=>mvT(d)});if(!t||t.done)bt.disabled=true;w.append(bt)}
+  const del=h("button",{class:"btn sm",title:"Supprimer la tâche sélectionnée"},ico("trash"));let arm=0;
+  if(!t)del.disabled=true;
+  del.onclick=()=>{if(!t)return;
+    if(!arm){arm=1;del.textContent="Supprimer ?";del.classList.add("danger");
+      setTimeout(()=>{if(!del.isConnected)return;arm=0;del.textContent="";del.append(ico("trash"));del.classList.remove("danger")},4000);return}
+    tasks=tasks.filter(x=>x!==t);selT=null;sv("enviro.tasks",tasks);renderAll()};
+  w.append(del);return w}
+function rTasks(b){b.textContent="";
+  b.append(addRow());
+  if(!tasks.length)b.append(h("div",{class:"msg",text:"Aucune tâche. La couleur dépend de la position : les premières sont les plus prioritaires."}));
+  taskList(b,true)}
+
+/* ---------- Lecture / réponse ---------- */
+function openMail(t){openPane("mail",t.id)}
+async function loadThread(id,refresh){
+  if(!mcp){return}
+  th[id]=th[id]||{};th[id].err=null;
+  try{const r=await mcp.callTool("Gmail","get_thread",{threadId:id,messageFormat:"PLAIN_TEXT"},refresh?{cache:{refresh:true}}:{});
+    const d=r&&r.payload;if(d&&typeof d==="object")th[id].d=d;else th[id].err={code:"bad"}}
+  catch(e){th[id].err=e}
+  renderAll();
+  const ms=((th[id].d||{}).messages)||[],last=ms[ms.length-1];
+  if(last&&(last.labelIds||[]).includes("UNREAD")){
+    try{await mcp.callTool("Gmail","unlabel_thread",{threadId:id,labelIds:["UNREAD"]});
+      const strip=l=>{for(const m of l)m.labelIds=(m.labelIds||[]).filter(x=>x!=="UNREAD")};
+      strip(ms);const t=mails.find(x=>x.id===id);if(t)strip(t.messages||[]);renderAll()}catch{}}}
+function replyBox(last,nm){const id=ot;
+  const ta=h("textarea",{placeholder:"Votre réponse…"});ta.value=dr[id]||"";ta.addEventListener("input",()=>{dr[id]=ta.value});
+  const ra=h("input",{type:"checkbox"}),send=h("button",{class:"btn",text:"Envoyer"}),sg=h("input",{type:"checkbox"});let arm=0;
+  sg.checked=ld("enviro.sig",true);sg.addEventListener("change",()=>sv("enviro.sig",sg.checked));
+  const v=()=>ta.value.trim();
+  send.onclick=async()=>{
+    if(!v()){toast("Écris d’abord ta réponse.");return}
+    if(!arm){arm=1;send.textContent="Confirmer l’envoi à "+(ra.checked?"tous les destinataires":nm(last.sender));send.classList.add("danger");
+      setTimeout(()=>{arm=0;send.textContent="Envoyer";send.classList.remove("danger")},6000);return}
+    arm=0;send.disabled=true;
+    try{await mcp.callTool("Gmail","reply",{messageId:last.id,body:v(),replyAll:ra.checked,includeSignature:sg.checked});dr[id]="";toast("Réponse envoyée");loadThread(id,true)}
+    catch(e){send.disabled=false;send.textContent="Envoyer";send.classList.remove("danger");toast("Envoi impossible : "+errTxt(e))}};
+  const dft=h("button",{class:"btn",text:"Enregistrer en brouillon",onclick:async()=>{
+    if(!v()){toast("Écris d’abord ta réponse.");return}
+    try{await mcp.callTool("Gmail","create_draft",{replyToMessageId:last.id,body:v(),includeSignature:sg.checked});dr[id]="";toast("Brouillon enregistré dans Gmail");renderAll()}
+    catch(e){toast("Brouillon impossible : "+errTxt(e))}}});
+  return h("div",{class:"rb"},h("div",{class:"sn",text:"Réponse à "+nm(last.sender)}),ta,h("div",{class:"act"},send,dft,h("label",{class:"sn"},ra," Répondre à tous"),h("label",{class:"sn"},sg," Inclure ma signature")))}
+function rThread(b){b.textContent="";
+  const x=th[ot]||{},t=mails.find(m=>m.id===ot)||lists.rep.find(m=>m.id===ot)||lists.lire.find(m=>m.id===ot);
+  if(!mcp){b.append(h("div",{class:"msg",text:"Les connecteurs ne sont pas disponibles ici."}));return}
+  if(x.err){b.append(h("div",{class:"msg",text:errTxt(x.err)}),h("button",{text:"Réessayer",onclick:()=>loadThread(ot,true)}));return}
+  if(!x.d){b.append(h("div",{class:"msg",text:"Chargement…"}));return}
+  const ms=x.d.messages||[],last=ms[ms.length-1]||{};
+  const nm=a=>{for(const m of ms)for(const d of m.addressDisplayNames||[])if(d.emailAddress===a)return d.displayName;return a||"—"};
+  const hd=h("div",{class:"th-h"},h("h3",{class:"th-s",text:last.subject||"(sans objet)"}));
+  if(t){hd.append(tagBtn(t,"rep"),tagBtn(t,"lire"),h("button",{class:"btn sm",text:"Archiver",onclick:async()=>{await archive(t);if(!mails.some(m=>m.id===ot))closePane()}}))}
+  if(x.d.viewUrl)hd.append(h("a",{class:"btn sm",href:x.d.viewUrl,target:"gmail",text:"Gmail ↗"}));
+  b.append(hd);
+  for(const m of ms){const body=(m.plaintextBody||m.snippet||"").trim(),full=exp[m.id]||body.length<=2500;
+    b.append(h("div",{class:"msg-b"},
+      h("div",{class:"r1"},h("span",{class:"sd",text:nm(m.sender)+" <"+m.sender+">"}),h("span",{class:"dt",text:m.date?fShort.format(new Date(m.date)):""})),
+      h("div",{class:"sn",text:"À : "+(m.toRecipients||[]).map(nm).join(", ")+((m.ccRecipients||[]).length?" · Cc : "+m.ccRecipients.map(nm).join(", "):"")}),
+      h("div",{class:"bd",text:full?body:body.slice(0,2500)+"…"}),
+      full?null:h("button",{class:"btn sm",text:"Afficher tout",onclick:()=>{exp[m.id]=1;renderAll()}})))}
+  b.append(replyBox(last,nm))}
+
+/* ---------- Planning (vue type Google Agenda) ---------- */
+const HH=44,pd=k=>{const[y,m,d]=k.split("-").map(Number);return new Date(y,m-1,d)};
+const addD=(k,n)=>{const d=pd(k);d.setDate(d.getDate()+n);return dk(d)};
+const monK=k=>{const d=pd(k);d.setDate(d.getDate()-((d.getDay()+6)%7));return dk(d)};
+function openEv(e){openPane("ev",e.id)}
+function toPlanning(k,id){nav.push(snapN());tab="cal";ag="grid";gv=id?"week":"day";gd=k;selEv=id||"";fx=id?{k:"ev",id}:null;pn=null;sv("enviro.tab","cal");sv("enviro.ag2","grid");window.scrollTo(0,0);renderAll()}
+function lanes(list){list.sort((a,b)=>a.s-b.s||b.en-a.en);
+  let cl=[],cur=null,mx=-1;
+  for(const it of list){if(!cur||it.s>=mx){cur=[];cl.push(cur);mx=-1}cur.push(it);mx=Math.max(mx,it.en)}
+  for(const c of cl){const ends=[];for(const it of c){let l=ends.findIndex(x=>x<=it.s);if(l<0){l=ends.length;ends.push(0)}ends[l]=it.en;it.l=l}for(const it of c)it.n=ends.length}}
+function rGrid(b){b.textContent="";
+  if(stateMsg("rng",b))return;
+  const now=new Date(),td=dk(now),minK=monK(td),maxK=dk(new Date(now.getFullYear(),now.getMonth()+3,0));
+  if(gd<minK)gd=minK;if(gd>maxK)gd=maxK;
+  const days=gv==="day"?[gd]:Array.from({length:7},(_,i)=>addD(monK(gd),i));
+  const by={};for(const e of ev3)for(const k of evDays(e))(by[k]=by[k]||[]).push(e);
+  let h0=8,h1=19;
+  for(const k of days)for(const e of by[k]||[]){const s=e.start||{};if(!s.dateTime)continue;const a=new Date(s.dateTime),z=new Date((e.end||{}).dateTime||s.dateTime);
+    h0=Math.min(h0,a.getHours());h1=Math.max(h1,dk(z)===k?z.getHours()+(z.getMinutes()?1:0):24)}
+  h1=Math.min(24,Math.max(h1,h0+1));
+  const fmt=new Intl.DateTimeFormat("fr-FR",{day:"numeric",month:"short"});
+  const title=gv==="day"?cap(fDay.format(pd(gd))):fmt.format(pd(days[0]))+" – "+fmt.format(pd(days[6]))+" "+pd(days[6]).getFullYear();
+  const mv=n=>{const k=addD(gd,n);if(k<minK||k>maxK){toast("Hors de la période chargée (cette semaine à 3 mois).");return}gd=k;selEv="";renderAll()};
+  const sg=h("div",{class:"seg"});
+  for(const[k,l]of[["day","Jour"],["week","Semaine"]])sg.append(h("button",{class:gv===k?"on":"",text:l,onclick:()=>{gv=k;sv("enviro.gv",k);renderAll()}}));
+  b.append(h("div",{class:"gc"},h("button",{class:"btn",text:"‹",title:"Précédent",onclick:()=>mv(gv==="day"?-1:-7)}),h("button",{class:"btn",text:"Aujourd’hui",onclick:()=>{gd=td;selEv="";renderAll()}}),h("button",{class:"btn",text:"›",title:"Suivant",onclick:()=>mv(gv==="day"?1:7)}),h("b",{text:title}),h("span",{class:"sp",style:"flex:1"}),sg));
+  const g=h("div",{class:"gg"});g.style.gridTemplateColumns="44px repeat("+days.length+",minmax(80px,1fr))";g.style.minWidth=(44+days.length*80)+"px";
+  g.append(h("div",{class:"gl"}));
+  for(const k of days){const d=pd(k);g.append(h("button",{class:"gh"+(k===td?" td":""),title:"Voir ce jour",onclick:()=>{gd=k;gv="day";renderAll()}},h("span",{text:cap(new Intl.DateTimeFormat("fr-FR",{weekday:"short"}).format(d))}),h("b",{text:String(d.getDate())})))}
+  const pick=e=>{selEv=e.id;openPane("ev",e.id)};
+  const colOf=e=>{const c=IMP.find(i=>i.k===imp[e.id]);return c?c.c:"var(--ac)"};
+  g.append(h("div",{class:"gl",text:"Journée"}));
+  for(const k of days){const c=h("div",{class:"gad"});
+    for(const e of by[k]||[]){if((e.start||{}).dateTime)continue;const x=h("button",{class:"gch"+(selEv===e.id?" sel":""),text:e.summary||"(sans titre)",title:e.summary||"",onclick:()=>pick(e)});x.style.setProperty("--c",colOf(e));c.append(x)}
+    g.append(c)}
+  const bh=(h1-h0)*HH,lab=h("div",{class:"gt"});lab.style.height=bh+"px";
+  for(let x=h0;x<h1;x++)lab.append(h("span",{style:"top:"+((x-h0)*HH)+"px",text:x+":00"}));
+  g.append(lab);
+  for(const k of days){const col=h("div",{class:"gcol"+(k===td?" td":"")});col.style.height=bh+"px";
+    const it=[];
+    for(const e of by[k]||[]){const s=e.start||{};if(!s.dateTime)continue;const a=new Date(s.dateTime),z=new Date((e.end||{}).dateTime||s.dateTime);
+      const sm=a.getHours()*60+a.getMinutes(),em=dk(z)===k?z.getHours()*60+z.getMinutes():1440;it.push({e,s:sm,en:Math.max(em,sm+30)})}
+    lanes(it);
+    for(const x of it){const e=x.e,hm=fHr.format(new Date(e.start.dateTime));
+      const ev=h("button",{class:"ge"+(selEv===e.id?" sel":"")+(fx&&fx.k==="ev"&&fx.id===e.id?" hl":""),title:hm+" · "+(e.summary||""),onclick:()=>pick(e)},h("b",{text:e.summary||"(sans titre)"}),h("span",{text:hm}));
+      ev.style.top=((x.s-h0*60)/60*HH)+"px";ev.style.height=Math.max(18,(x.en-x.s)/60*HH-2)+"px";ev.style.left=(x.l/x.n*100)+"%";ev.style.width=(100/x.n)+"%";ev.style.setProperty("--c",colOf(e));col.append(ev)}
+    if(k===td){const m=now.getHours()*60+now.getMinutes();if(m>=h0*60&&m<=h1*60){const ln=h("div",{class:"gnow"});ln.style.top=((m-h0*60)/60*HH)+"px";col.append(ln)}}
+    g.append(col)}
+  b.append(h("div",{class:"gw"},g));
+  if(!ev3.length)b.append(h("div",{class:"msg",text:"Aucun événement sur la période."}))}
+
+/* ---------- Étiquettes Gmail ---------- */
+function lbOf(t){const ids=new Set(labels.map(x=>x.labelId));return[...new Set((t.messages||[]).flatMap(m=>m.labelIds||[]))].filter(i=>ids.has(i))}
+function chip(id){const x=labels.find(l=>l.labelId===id);if(!x)return null;
+  const ok=v=>/^#[0-9a-f]{6}$/i.test(v||""),c=x.color||{};
+  return h("span",{class:"badge",style:"background:"+(ok(c.backgroundColor)?c.backgroundColor:"var(--p4)")+";color:"+(ok(c.textColor)?c.textColor:"#fff"),text:x.name})}
+const TAGS={rep:"À répondre",lire:"À lire"};
+const nrm=x=>String(x||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/\s+/g," ").trim();
+const tagLbl=k=>labels.find(x=>nrm(x.name)===nrm(TAGS[k]));
+const hasTag=(t,k)=>{const l=tagLbl(k);return !!l&&lbOf(t).includes(l.labelId)};
+async function tagMail(t,k){
+  try{let l=tagLbl(k);
+    if(!l){const r=await mcp.callTool("Gmail","create_label",{name:TAGS[k]}),p=r&&r.payload;if(!p||!p.labelId)throw{code:"bad"};l={labelId:p.labelId,name:TAGS[k],labelType:"USER"};labels.push(l);labels.sort((a,b)=>a.name.localeCompare(b.name,"fr"))}
+    const on=hasTag(t,k),ms=t.messages||[],m=ms[ms.length-1];
+    if(on){await mcp.callTool("Gmail","unlabel_thread",{threadId:t.id,labelIds:[l.labelId]});if(m)m.labelIds=(m.labelIds||[]).filter(x=>x!==l.labelId)}
+    else{await mcp.callTool("Gmail","label_thread",{threadId:t.id,labelIds:[l.labelId]});if(m)m.labelIds=[...(m.labelIds||[]),l.labelId]}
+    renderAll();pull(k);toast(on?"« "+TAGS[k]+" » retiré":"Ajouté à « "+TAGS[k]+" »")}
+  catch(e){toast("Étiquetage impossible : "+errTxt(e))}}
+const tagBtn=(t,k)=>h("button",{class:"btn sm"+(hasTag(t,k)?" on":""),title:hasTag(t,k)?"Retirer l’étiquette":"Ajouter l’étiquette dans Gmail",text:TAGS[k],onclick:()=>tagMail(t,k)});
+const ordered=k=>{const o=mo[k]||[],ex=k==="star"?new Set([...lists.rep,...lists.lire].map(t=>t.id)):null;
+  return lists[k].filter(t=>!ex||!ex.has(t.id)).sort((a,b)=>{const x=o.indexOf(a.id),y=o.indexOf(b.id);return(x<0?1e9:x)-(y<0?1e9:y)})};
+async function ensureLabel(k){let l=tagLbl(k);if(l)return l;
+  const r=await mcp.callTool("Gmail","create_label",{name:TAGS[k]}),p=r&&r.payload;if(!p||!p.labelId)throw{code:"bad"};
+  l={labelId:p.labelId,name:TAGS[k],labelType:"USER"};labels.push(l);labels.sort((a,b)=>a.name.localeCompare(b.name,"fr"));return l}
+async function unstar(t){try{await mcp.callTool("Gmail","unlabel_thread",{threadId:t.id,labelIds:["STARRED"]});lists.star=lists.star.filter(x=>x.id!==t.id);renderAll();pull("star")}catch(e){toast("Impossible de retirer le suivi : "+errTxt(e))}}
+async function moveMail(id,from,to,idx){
+  const t=(lists[from]||[]).find(x=>x.id===id);if(!t||!mcp||!TAGS[to])return;
+  try{const lt=await ensureLabel(to);
+    await mcp.callTool("Gmail","label_thread",{threadId:id,labelIds:[lt.labelId]});
+    if(from==="star")await mcp.callTool("Gmail","unlabel_thread",{threadId:id,labelIds:["STARRED"]});
+    else{const lf=await ensureLabel(from);await mcp.callTool("Gmail","unlabel_thread",{threadId:id,labelIds:[lf.labelId]})}
+    lists[from]=lists[from].filter(x=>x.id!==id);lists[to]=[t,...lists[to].filter(x=>x.id!==id)];
+    const ids=ordered(to).map(x=>x.id).filter(x=>x!==id);ids.splice(Math.min(idx,ids.length),0,id);mo[to]=ids;sv("enviro.mo",mo);
+    renderAll();pull(to);toast("Classé dans « "+TAGS[to]+" »")}
+  catch(e){toast("Déplacement impossible : "+errTxt(e))}}
+function mailRow(t,k,i){const ms=t.messages||[],m=ms[ms.length-1]||{},d=m.date?fShort.format(new Date(m.date)):"";
+  return h("div",{class:"it lk","data-id":t.id,style:"border-left:4px solid "+(k==="star"?"var(--bd)":rankC(i))+";padding-left:8px",onclick:e=>{if(e.target.closest("button,a,select,input"))return;openMail(t)}},
+    h("div",{class:"r1"},h("span",{class:"sd",text:m.sender||"—"}),h("span",{class:"dt",text:d})),
+    h("div",{class:"sj",text:m.subject||"(sans objet)"}),
+    h("div",{class:"act"},
+      k==="star"?h("button",{class:"btn sm",text:"Retirer du suivi",title:"Retire l’étoile dans Gmail",onclick:()=>unstar(t)}):h("button",{class:"btn sm",text:"Fait",title:"Retirer l’étiquette « "+TAGS[k]+" »",onclick:()=>tagMail(t,k)}),
+      h("button",{class:"btn sm",text:"Lire / Répondre",onclick:()=>openMail(t)})))}
+function mailList(b,k){
+  if(k!=="star")b.dataset.drop=k;
+  if(stateMsg(k,b))return;
+  const ths=ordered(k);
+  if(!ths.length){b.append(h("div",{class:"msg",text:k==="star"?"Aucun mail suivi (étoilé) à classer. Mets une étoile sur un mail dans Gmail, puis glisse-le ici vers « À répondre » ou « À lire ».":"Aucun mail dans « "+TAGS[k]+" ». Pose cette étiquette dans Gmail, ou glisse ici un mail de « Mails suivis »."}));return}
+  const box=h("div",{});ths.forEach((t,i)=>box.append(mailRow(t,k,i)));b.append(box);
+  sortable(box,".it",ids=>{mo[k]=ids;sv("enviro.mo",mo);renderAll()},k,(id,to,idx)=>moveMail(id,k,to,idx))}
+function lsel(t){const have=lbOf(t);
+  const s=h("select",{title:"Ajouter une étiquette",onchange:()=>{if(s.value)applyLabel(t,s.value)}},h("option",{value:"",text:"+ Étiquette"}),...labels.filter(x=>!have.includes(x.labelId)).map(x=>h("option",{value:x.labelId,text:x.name})));return s}
+async function applyLabel(t,id){
+  try{await mcp.callTool("Gmail","label_thread",{threadId:t.id,labelIds:[id]});
+    const ms=t.messages||[];if(ms.length){const m=ms[ms.length-1];m.labelIds=[...(m.labelIds||[]),id]}
+    renderAll();mcp.invalidate("Gmail","search_threads").catch(()=>{});toast("Étiquette ajoutée")}
+  catch(e){toast("Étiquetage impossible : "+errTxt(e))}}
+
+/* ---------- Chargement des connecteurs ---------- */
+function apply(k,res){const p=res&&res.payload;if(!p||typeof p!=="object")return;if(k==="cal"&&p.summary)owner=p.summary;
+  if(k==="mail")mails=p.threads||[];else if(k==="rep"||k==="lire"||k==="star")lists[k]=p.threads||[];else events=(p.events||[]).filter(e=>e.status!=="cancelled");
+  st[k]=null;loaded[k]=true;lastOk[k]=new Date();renderAll()}
+async function pull(k){try{apply(k,await mcp.callTool(...Q[k],{cache:{refresh:true}}))}catch(e){softErr(k,e)}}
+function softErr(k,e){e=e||{};loaded[k]=true;
+  if(AUTHZ.includes(e.code)){st[k]=e;if(k==="mail")mails=[];else if(k==="rep"||k==="lire"||k==="star")lists[k]=[];else if(k==="cal")events=[]}
+  else if(!lastOk[k])st[k]=e;
+  else{const n=Date.now();if(n-(softErr.t||0)>60000){softErr.t=n;toast("Actualisation impossible ("+String(e.message||e.code||"erreur").slice(0,100)+") : les données affichées datent de "+fHr.format(lastOk[k]))}}
+  renderAll()}
+function watch(k){mcp.watchTool(...Q[k],ev=>{if(ev.type==="data")apply(k,ev.result);else softErr(k,ev.error)},{refetchInterval:60000})}
+
+build();
+(async()=>{
+  try{mcp=window.claude?await window.claude.use("mcp"):null}catch{mcp=null}
+  renderAll();
+  loadCfg();
+  if(mcp){watch("mail");watch("cal");watch("rep");watch("lire");watch("star");pullRange();setInterval(()=>pullRange(true),300000);
+    mcp.callTool("Gmail","list_labels",{}).then(r=>{const p=r&&r.payload;labels=((p&&p.labels)||[]).filter(x=>x.labelType==="USER").sort((a,b)=>a.name.localeCompare(b.name,"fr"));renderAll()}).catch(()=>{})}
+})();
+</script>
+</body></html>

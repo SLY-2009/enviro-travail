@@ -20,21 +20,30 @@ if not exist "%T%" (
   exit /b
 )
 set N=0
-for /r "%T%" %%f in (index.html bridge.js) do (
-  copy /Y "%%f" "ui\" >nul
-  echo   copie : %%~nxf  vers  ui\
+set NAT=0
+for /r "%T%" %%f in (app.html) do (
+  copy /Y "%%f" "ui\app.html" >nul
+  echo   copie : app.html  vers  ui\   ^(interface^)
   set /a N+=1
+)
+for /r "%T%" %%f in (loader-index.html) do (
+  copy /Y "%%f" "ui\index.html" >nul
+  echo   copie : page de demarrage  vers  ui\index.html
+  set /a N+=1
+  set /a NAT+=1
 )
 for /r "%T%" %%f in (main.rs google.rs) do (
   copy /Y "%%f" "src-tauri\src\" >nul
   echo   copie : %%~nxf  vers  src-tauri\src\
   set /a N+=1
+  set /a NAT+=1
 )
 for /r "%T%" %%f in (release.yml) do (
   if not exist ".github\workflows" mkdir ".github\workflows"
   copy /Y "%%f" ".github\workflows\" >nul
   echo   copie : %%~nxf  vers  .github\workflows\
   set /a N+=1
+  set /a NAT+=1
 )
 if %N%==0 (
   echo Aucun fichier reconnu dans ce zip : rien n'a ete envoye.
@@ -47,6 +56,11 @@ git add -A
 git commit -m "MAJ %date% %time%"
 git push
 echo.
-echo Envoye. La construction prend 15 a 25 minutes (onglet Actions du depot GitHub).
-echo Ensuite, ouvre simplement l'application : elle se met a jour toute seule.
+if %NAT%==0 (
+  echo Envoye. Il n'y a PAS de construction a attendre : ferme puis rouvre l'application,
+  echo elle charge la nouvelle interface au lancement.
+) else (
+  echo Envoye. Cette mise a jour contient du code de l'application : la construction prend 15 a 25 minutes
+  echo ^(onglet Actions du depot GitHub^). Ensuite, ouvre simplement l'application.
+)
 pause
