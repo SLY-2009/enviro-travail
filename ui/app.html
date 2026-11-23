@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="fr"><head><meta charset="utf-8">
-<meta name="enviro-ui" content="20261123-1610">
+<meta name="enviro-ui" content="20261123-1613">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Enviro Travail</title>
 <style>
@@ -59,6 +59,11 @@ button:hover{background:var(--hv)}
 .dc.crit{background:var(--p1);color:#fff;opacity:1}
 .dc.today{border-color:var(--tx);font-weight:700}
 .sq.sel{outline:2px solid var(--ac);outline-offset:1px;opacity:1}
+.dd{margin-top:10px;border-top:1px solid var(--bd);padding-top:4px}
+.vh h2{color:var(--bgtx,var(--tx))}
+.bgpop{position:fixed;top:calc(40px + env(safe-area-inset-top,0px));right:12px;z-index:2000;background:var(--card);color:var(--tx);border:1px solid var(--bd);border-radius:12px;padding:10px;box-shadow:0 10px 30px rgba(0,0,0,.25);width:220px}
+.bgpop .sw{width:28px;height:28px;border-radius:7px;border:1px solid var(--bd);margin:3px;cursor:pointer;padding:0}
+.bgpop .act{align-items:center}
 .dc.sel{outline:2px solid var(--ac)}
 .dp{margin-top:10px;border-top:1px solid var(--bd);padding-top:4px}
 .lg{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px;font-size:12px;color:var(--mu)}
@@ -203,7 +208,7 @@ a.dk{display:block;text-decoration:none}
 #toast{bottom:calc(100px + env(safe-area-inset-bottom,0px)) !important}
 </style></head>
 <body>
-<header id="mb"><b>Enviro Travail</b><nav id="tabs"></nav><span class="sp"></span><button id="bell"></button><button id="thm"></button><span id="clk"></span></header>
+<header id="mb"><b>Enviro Travail</b><nav id="tabs"></nav><span class="sp"></span><button id="bell"></button><button id="bgb" title="Couleur du fond">🎨</button><button id="thm"></button><span id="clk"></span></header>
 <main id="app"></main>
 <div id="toast"></div>
 <script>
@@ -431,7 +436,7 @@ let CFG={},dbRef=null,dbT=null;
 const ld=(k,d)=>{if(k in CFG)return CFG[k]===undefined?d:CFG[k];try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch{return d}};
 const sv=(k,v)=>{CFG[k]=v;try{localStorage.setItem(k,JSON.stringify(v))}catch{}if(dbRef){clearTimeout(dbT);dbT=setTimeout(saveCfg,900)}};
 function saveCfg(){if(!dbRef)return;try{dbRef.set({cfg:JSON.stringify(CFG),ts:Date.now()}).catch(()=>{})}catch{}}
-function applyCfg(){tasks=ld("enviro.tasks",[]);migTasks();imp=ld("enviro.imp",{});mo=ld("enviro.mo",{rep:[],lire:[]});mg=ld("enviro.mg","inbox");tab=ld("enviro.tab","home");if(!TABS.some(t=>t.id===tab))tab="home";ag=ld("enviro.ag2","grid");gv=ld("enviro.gv","week");HL=ld("enviro.hl4",null);thm=ld("enviro.thm","auto");zoomF=ld("enviro.zoom",1);applyZoom();notif=ld("enviro.notif",false);setTheme(thm);bell();renderAll()}
+function applyCfg(){tasks=ld("enviro.tasks",[]);migTasks();imp=ld("enviro.imp",{});mo=ld("enviro.mo",{rep:[],lire:[]});mg=ld("enviro.mg","inbox");tab=ld("enviro.tab","home");if(!TABS.some(t=>t.id===tab))tab="home";ag=ld("enviro.ag2","grid");gv=ld("enviro.gv","week");HL=ld("enviro.hl4",null);thm=ld("enviro.thm","auto");zoomF=ld("enviro.zoom",1);applyZoom();bgC=ld("enviro.bg","");applyBg();notif=ld("enviro.notif",false);setTheme(thm);bell();renderAll()}
 async function loadCfg(){try{
   if(!window.claude)return;
   const[db,u]=await Promise.all([window.claude.use("db"),window.claude.use("user")]);if(!db||!u)return;
@@ -609,6 +614,13 @@ function squares(now){
     h("div",{class:"lg"},h("span",{class:"badge b1",text:nc+(nc>1?" jours critiques":" jour critique")}),h("span",{class:"badge b2",text:ni+(ni>1?" jours importants":" jour important")}),
       h("span",{text:nx?"Prochain : "+fDay.format(nx):"Aucun jour important à venir."})),ml,g);
   return sq}
+function impList(b,now){const td=dk(now),by={};
+  for(const e of ev3)for(const k of evDays(e))(by[k]=by[k]||[]).push(e);
+  const isI=e=>imp[e.id]==="crit"||imp[e.id]==="imp";
+  const ks=Object.keys(by).filter(k=>k>=td&&by[k].some(isI)).sort();
+  if(!ks.length){b.append(h("div",{class:"msg",text:"Aucun événement important étiqueté à venir. Étiquette-les « Critique » ou « Important » dans le détail d’un jour."}));return}
+  for(const k of ks){b.append(h("div",{class:"day lk",title:"Voir ce jour sous le calendrier",text:cap(fDay.format(pd(k))),onclick:()=>{sel=k;renderAll()}}));
+    by[k].filter(isI).sort((a,c)=>sdt(a)-sdt(c)).forEach(e=>b.append(evLite(e)))}}
 function dayDetail(b,k){
   const es=ev3.filter(e=>evDays(e).includes(k)).sort((a,c)=>sdt(a)-sdt(c));
   b.append(h("div",{class:"day",text:cap(fDay.format(pd(k)))+(k===dk(new Date())?" (aujourd’hui)":"")}));
@@ -626,13 +638,13 @@ function rHome(b){b.textContent="";
     if(!up.length)c1.append(h("div",{class:"msg",text:"Rien de prévu cette semaine."}));
     up.forEach(e=>c1.append(evLite(e)))}
   const c3=card("Jours importants","cal","jr");
-  if(!stateMsg("rng",c3))c3.append(squares(now));
+  if(!stateMsg("rng",c3)){c3.append(squares(now));const dd=h("div",{class:"dd"});dayDetail(dd,sel||dk(now));c3.append(dd)}
   const c2=card("Tâches","tasks","tk");
   c2.append(addRow(),taskTools());
   if(!tasks.length)c2.append(h("div",{class:"msg",text:"Aucune tâche."}));
   taskList(c2,true);
-  const c4=card("Détail du jour","cal","dj");
-  if(!stateMsg("rng",c4))dayDetail(c4,sel||dk(now));
+  const c4=card("Événements importants","cal","dj");
+  if(!stateMsg("rng",c4))impList(c4,now);
   const c5=card("Mails à répondre","mail","mr");mailList(c5,"rep");
   const c6=card("Mails à lire","mail","ml");mailList(c6,"lire");
   const c7=card("Mails suivis (étoile Gmail)","mail","su");mailList(c7,"star");
@@ -660,6 +672,20 @@ function renderAll(){if(dragging){pendingR=true;return}pendingR=false;document.q
   renderTabs();notifyUrgent();
   if(fx){const el=$(".hl");if(el)el.scrollIntoView({block:"center",behavior:"smooth"});
     clearTimeout(renderAll.t);renderAll.t=setTimeout(()=>{fx=null;document.querySelectorAll(".hl").forEach(x=>x.classList.remove("hl"))},3000)}}
+let bgC=ld("enviro.bg","");
+function applyBg(){const r=document.documentElement;
+  if(!bgC||!/^#[0-9a-f]{6}$/i.test(bgC)){r.style.removeProperty("--bg");r.style.removeProperty("--bgtx");return}
+  r.style.setProperty("--bg",bgC);const n=parseInt(bgC.slice(1),16),L=(.299*(n>>16&255)+.587*(n>>8&255)+.114*(n&255))/255;
+  r.style.setProperty("--bgtx",L<.5?"#f4f3ee":"#1c1c1a")}
+function setBg(c){bgC=c;sv("enviro.bg",c);applyBg()}
+const BGS=["#f3f2ee","#e8eef5","#eaf2ec","#f5eee6","#efe9f3","#cfd8e3","#2b2f36","#1b1e24","#243a34"];
+function closeBg(){const e=document.querySelector(".bgpop");if(e)e.remove()}
+function bgMenu(ev){ev.stopPropagation();if(document.querySelector(".bgpop")){closeBg();return}
+  const pop=h("div",{class:"bgpop"},h("div",{class:"dt",text:"Couleur du fond"}));
+  BGS.forEach(c=>pop.append(h("button",{class:"sw",title:c,style:"background:"+c,onclick:()=>setBg(c)})));
+  pop.append(h("div",{class:"act"},h("input",{type:"color",value:/^#[0-9a-f]{6}$/i.test(bgC)?bgC:"#f3f2ee",title:"Choisir une autre couleur",oninput:e=>setBg(e.target.value)}),h("button",{class:"btn sm",text:"Par défaut",onclick:()=>setBg("")})));
+  document.body.append(pop);
+  setTimeout(()=>document.addEventListener("click",function f(e){if(!e.target.closest(".bgpop")){closeBg();document.removeEventListener("click",f)}}),0)}
 let zoomF=ld("enviro.zoom",1);
 const Z=()=>zoomF||1;
 function applyZoom(){const r=document.documentElement;r.style.zoom=zoomF===1?"":String(zoomF);r.style.setProperty("--z",String(zoomF))}
@@ -670,7 +696,7 @@ document.addEventListener("keydown",e=>{if(!(e.ctrlKey||e.metaKey))return;
 function dayTick(){const t=dk(new Date());if(!curDay)curDay=t;
   if(t!==curDay){const old=curDay;curDay=t;if(gd===old||!gd)gd=t;if(mcp)pullRange(true);renderAll()}
   else if(tab==="cal"&&ag==="grid"&&!pn)renderAll()}
-function build(){applyZoom();gd=dk(new Date());curDay=gd;window.addEventListener("focus",()=>{if(Date.now()-(window.__fr||0)>20000){window.__fr=Date.now();refreshAll()}});setInterval(dayTick,60000);document.addEventListener("visibilitychange",()=>{if(!document.hidden){dayTick();clock()}});setTheme(thm);$("#thm").onclick=()=>setTheme(thm==="auto"?"light":thm==="light"?"dark":"auto");$("#bell").onclick=toggleBell;bell();renderAll();clock();setInterval(clock,30000)}
+function build(){applyZoom();applyBg();$("#bgb").onclick=bgMenu;gd=dk(new Date());curDay=gd;window.addEventListener("focus",()=>{if(Date.now()-(window.__fr||0)>20000){window.__fr=Date.now();refreshAll()}});setInterval(dayTick,60000);document.addEventListener("visibilitychange",()=>{if(!document.hidden){dayTick();clock()}});setTheme(thm);$("#thm").onclick=()=>setTheme(thm==="auto"?"light":thm==="light"?"dark":"auto");$("#bell").onclick=toggleBell;bell();renderAll();clock();setInterval(clock,30000)}
 
 /* ---------- Mails ---------- */
 function pbtn(n,t){return h("button",{class:"pb p"+n,title:"Ajouter aux tâches : "+PR[n],text:"P"+n,onclick:()=>addTask(t,n)})}
