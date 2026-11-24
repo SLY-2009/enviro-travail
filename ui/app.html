@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="fr"><head><meta charset="utf-8">
-<meta name="enviro-ui" content="20261124-1200">
+<meta name="enviro-ui" content="20261124-1230">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Enviro Travail</title>
 <style>
@@ -158,7 +158,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .tctl .ico svg{width:15px;height:15px}
 .tk.lk.on{background:var(--hv)}
 .jr{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start}
-.sqw{flex:0 1 460px;min-width:260px}
+.sqw{flex:0 0 auto;min-width:0;max-width:100%;overflow-x:auto}
 .jl{flex:1 1 240px;min-width:220px}
 @media (max-width:1000px){#app.sp2{display:block}.pane{position:fixed;right:0;top:calc(40px + env(safe-area-inset-top,0px));bottom:0;width:min(440px,100vw);max-height:none;z-index:40;border-radius:14px 0 0 0}}
 #app{max-width:none !important;margin:0 !important}
@@ -529,11 +529,11 @@ function hDrag(el,id,mode){
     if(e.target.closest("button,select,input,a"))return;
     e.preventDefault();el.setPointerCapture(e.pointerId);hFront(id);dragging=true;
     const l=HL[id],sx=e.clientX,sy=e.clientY,o={...l};
-    const mv=ev=>{const dx=(ev.clientX-sx)/Z(),dy=(ev.clientY-sy)/Z();
+    const mv=ev=>{if(ev.buttons===0){up();return}const dx=(ev.clientX-sx)/Z(),dy=(ev.clientY-sy)/Z();
       if(mode==="move"){l.x=Math.max(0,o.x+dx);l.y=Math.max(0,o.y+dy)}else{l.w=Math.max(240,o.w+dx);l.h=Math.max(160,o.h+dy)}
       if(!ev.altKey)hSnap(id,mode);hPlace(id)};
-    const up=()=>{el.removeEventListener("pointermove",mv);el.removeEventListener("pointerup",up);el.removeEventListener("pointercancel",up);sv("enviro.hl4",HL);dragging=false;flushR()};
-    el.addEventListener("pointermove",mv);el.addEventListener("pointerup",up);el.addEventListener("pointercancel",up)})}
+    let fin=false;const up=()=>{if(fin)return;fin=true;for(const t of[el,window]){t.removeEventListener("pointermove",mv);t.removeEventListener("pointerup",up);t.removeEventListener("pointercancel",up)}el.removeEventListener("lostpointercapture",up);window.removeEventListener("blur",up);try{el.releasePointerCapture(e.pointerId)}catch{}sv("enviro.hl4",HL);dragging=false;flushR()};
+    el.addEventListener("pointermove",mv);window.addEventListener("pointermove",mv);el.addEventListener("pointerup",up);window.addEventListener("pointerup",up);el.addEventListener("pointercancel",up);window.addEventListener("pointercancel",up);el.addEventListener("lostpointercapture",up);window.addEventListener("blur",up)})}
 function addRow(){const inp=h("input",{placeholder:"Nouvelle tâche (ajoutée en bas de la liste)…"});
   const submit=()=>{const v=inp.value.trim();if(!v)return;inp.value="";tasks.push({id:"t"+Date.now(),title:v,from:"",url:"",st:"",done:false,ts:Date.now()});sv("enviro.tasks",tasks);renderAll()};
   inp.addEventListener("keydown",e=>{if(e.key==="Enter")submit()});
@@ -591,11 +591,12 @@ function taskList(parent,full){
   const box=h("div",{});openT().forEach((t,i)=>box.append(taskRow(t,i,full)));tasks.filter(t=>t.done).forEach(t=>box.append(taskRow(t,-1,full)));
   parent.append(box);
   sortable(box,".tk:not(.done)",ids=>{const m=new Map(tasks.map(t=>[t.id,t]));tasks=[...ids.map(id=>m.get(id)),...tasks.filter(t=>t.done)];sv("enviro.tasks",tasks);renderAll()})}
+function sqSize(d){const v=Math.max(8,Math.min(40,ld("enviro.sqs",16)+d));sv("enviro.sqs",v);renderAll()}
 function squares(now){
   const by={};for(const e of ev3)for(const k of evDays(e))(by[k]=by[k]||[]).push(e);
   const td=dk(now),t0=new Date(now.getFullYear(),now.getMonth(),now.getDate()),end=new Date(now.getFullYear(),now.getMonth()+3,0);
   const st=new Date(t0);st.setDate(st.getDate()-((st.getDay()+6)%7));
-  const nW=Math.ceil((Math.round((end-st)/864e5)+1)/7),cols="16px repeat("+nW+",1fr)";
+  const nW=Math.ceil((Math.round((end-st)/864e5)+1)/7),cols="16px repeat("+nW+",var(--sqs,16px))";
   const ml=h("div",{class:"sqm"}),g=h("div",{class:"sqg"}),fm=new Intl.DateTimeFormat("fr-FR",{month:"short"});
   ml.style.gridTemplateColumns=cols;g.style.gridTemplateColumns=cols;ml.append(h("span"));
   for(const d of ["L","M","M","J","V","S","D"])g.append(h("span",{class:"sqd",text:d}));
@@ -613,7 +614,8 @@ function squares(now){
         onclick:()=>{const n=Date.now();if(lastSq.k===key&&n-lastSq.t<450){lastSq={k:"",t:0};sel=key;openPane("day",key);return}lastSq={k:key,t:n};sel=key;renderAll()}}))}}
   const sq=h("div",{class:"sqw"},
     h("div",{class:"lg"},h("span",{class:"badge b1",text:nc+(nc>1?" jours critiques":" jour critique")}),h("span",{class:"badge b2",text:ni+(ni>1?" jours importants":" jour important")}),
-      h("span",{text:nx?"Prochain : "+fDay.format(nx):"Aucun jour important à venir."})),ml,g);
+      h("span",{text:nx?"Prochain : "+fDay.format(nx):"Aucun jour important à venir."}),h("span",{style:"margin-left:auto;white-space:nowrap"},h("button",{class:"btn sm",title:"Réduire le calendrier",text:"−",onclick:()=>sqSize(-2)}),h("button",{class:"btn sm",title:"Agrandir le calendrier",text:"+",onclick:()=>sqSize(2)}))),ml,g);
+  sq.style.setProperty("--sqs",ld("enviro.sqs",16)+"px");
   return sq}
 function impList(b,now){const td=dk(now),by={};
   for(const e of ev3)for(const k of evDays(e))(by[k]=by[k]||[]).push(e);
