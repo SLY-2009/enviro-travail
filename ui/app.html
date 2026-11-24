@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="fr"><head><meta charset="utf-8">
-<meta name="enviro-ui" content="20261124-1630">
+<meta name="enviro-ui" content="20261124-1700">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Enviro Travail</title>
 <style>
@@ -126,6 +126,19 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .rub.dz{outline:2px dashed var(--ac);outline-offset:1px}
 .rubfoot{margin-top:6px;border:1px dashed var(--bd);border-radius:6px;padding:6px;text-align:center;color:var(--mu);font-size:11px}
 .rub .hint{color:var(--mu);font-size:12px;padding:6px 8px}
+.tlist{position:relative;padding-bottom:4px}
+.tk.kid{margin-left:22px}
+.tk .tgl{padding:0 5px;border:0;background:transparent}
+.tk.par .tl{font-weight:700}
+.tl .cnt{color:var(--mu);font-weight:400;font-size:11px}
+.tk.dzin{outline:2px solid var(--ac);outline-offset:-2px;background:color-mix(in srgb,var(--ac) 14%,transparent)}
+.dline{position:absolute;left:0;right:0;height:3px;margin-top:-2px;background:var(--ac);border-radius:2px;pointer-events:none;z-index:5}
+.tend{min-height:30px}
+.tsub{margin:2px 0 4px 22px}.tsub input{width:calc(100% - 10px)}
+.ctx{position:fixed;z-index:10000;background:var(--card);border:1px solid var(--bd);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.3);padding:4px;min-width:220px;display:flex;flex-direction:column}
+.ctx button{text-align:left;border:0;background:transparent;padding:7px 10px;border-radius:5px;white-space:nowrap}
+.ctx button:hover{background:var(--hv)}
+.ctx button.danger{color:var(--p1)}
 .alert{background:var(--p1);color:#fff;border-radius:10px;padding:8px 14px;margin:8px 0;cursor:pointer;font-weight:600}
 .th-h{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
 .th-s{margin:0;flex:1;font-size:16px}
@@ -447,9 +460,9 @@ const $=s=>document.querySelector(s);
 function h(t,a={},...k){const e=document.createElement(t);for(const[n,v]of Object.entries(a)){if(n==="class")e.className=v;else if(n.startsWith("on"))e.addEventListener(n.slice(2),v);else if(n==="text")e.textContent=v;else e.setAttribute(n,v)}k.flat().forEach(c=>c!=null&&e.append(c));return e}
 let CFG={},dbRef=null,dbT=null;
 const ld=(k,d)=>{if(k in CFG)return CFG[k]===undefined?d:CFG[k];try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch{return d}};
-const sv=(k,v)=>{CFG[k]=v;if(!inUndo&&(k==="enviro.tasks"||k==="enviro.cats"||k==="enviro.top"))histPush();try{localStorage.setItem(k,JSON.stringify(v))}catch{}if(dbRef){clearTimeout(dbT);dbT=setTimeout(saveCfg,900)}};
+const sv=(k,v)=>{CFG[k]=v;if(!inUndo&&k==="enviro.tasks")histPush();try{localStorage.setItem(k,JSON.stringify(v))}catch{}if(dbRef){clearTimeout(dbT);dbT=setTimeout(saveCfg,900)}};
 function saveCfg(){if(!dbRef)return;try{dbRef.set({cfg:JSON.stringify(CFG),ts:Date.now()}).catch(()=>{})}catch{}}
-function applyCfg(){topO=ld("enviro.top",[]);cats=ld("enviro.cats",[]);tasks=ld("enviro.tasks",[]);migTasks();imp=ld("enviro.imp",{});mo=ld("enviro.mo",{rep:[],lire:[]});mg=ld("enviro.mg","inbox");tab=ld("enviro.tab","home");if(!TABS.some(t=>t.id===tab))tab="home";ag=ld("enviro.ag2","grid");gv=ld("enviro.gv","week");HL=ld("enviro.hl4",null);thm=ld("enviro.thm","auto");zoomF=ld("enviro.zoom",1);applyZoom();bgC=ld("enviro.bg","");applyBg();notif=ld("enviro.notif",false);setTheme(thm);bell();renderAll()}
+function applyCfg(){topO=ld("enviro.top",[]);cats=ld("enviro.cats",[]);tasks=ld("enviro.tasks",[]);colS=ld("enviro.col",{});migTasks();migCats();HIST=[hSnap2()];REDO=[];imp=ld("enviro.imp",{});mo=ld("enviro.mo",{rep:[],lire:[]});mg=ld("enviro.mg","inbox");tab=ld("enviro.tab","home");if(!TABS.some(t=>t.id===tab))tab="home";ag=ld("enviro.ag2","grid");gv=ld("enviro.gv","week");HL=ld("enviro.hl4",null);thm=ld("enviro.thm","auto");zoomF=ld("enviro.zoom",1);applyZoom();bgC=ld("enviro.bg","");applyBg();notif=ld("enviro.notif",false);setTheme(thm);bell();renderAll()}
 async function loadCfg(){try{
   if(!window.claude)return;
   const[db,u]=await Promise.all([window.claude.use("db"),window.claude.use("user")]);if(!db||!u)return;
@@ -473,7 +486,9 @@ const fDay=new Intl.DateTimeFormat("fr-FR",{weekday:"long",day:"numeric",month:"
 const fHr=new Intl.DateTimeFormat("fr-FR",{hour:"2-digit",minute:"2-digit"});
 const fShort=new Intl.DateTimeFormat("fr-FR",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"});
 
-function toast(t){const e=$("#toast");e.textContent=t;e.style.display="block";clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display="none",4000)}
+function toast(t,act){const e=$("#toast");e.textContent=t;
+  if(act){const b=document.createElement("button");b.textContent=act.l;b.style.cssText="margin-left:12px;font-weight:700;cursor:pointer";b.onclick=()=>{e.style.display="none";act.f()};e.append(b)}
+  e.style.display="block";clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display="none",act?8000:4000)}
 const errTxt=e=>ERR[e&&e.code]||("Échec"+(e&&e.code?" ("+e.code+")":""));
 
 /* ---------- Navigation ---------- */
@@ -493,7 +508,7 @@ function back(){const p=nav.pop();if(!p)return;tab=p.tab;ag=p.ag;gd=p.gd||gd;fx=
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!/INPUT|TEXTAREA|SELECT/.test((document.activeElement||{}).tagName||"")){if(pn)closePane();else if(nav.length)back()}});
 function clock(){const d=new Date(),v=(document.querySelector('meta[name="enviro-ui"]')||{}).content;$("#clk").textContent=cap(fDay.format(d))+"  "+fHr.format(d)+(v?"  ·  interface "+v:"")}
 function refreshAll(){if(!mcp)return;pull("mail");pull("cal");pull("rep");pull("lire");pull("star");pullRange(true)}
-const openT=()=>tasks.filter(t=>!t.done),rankC=i=>i<2?"var(--p1)":i<5?"var(--p2)":"var(--p3)",urgent=()=>openGroups().flatMap(g=>g.slice(0,2));
+const openT=()=>roots().filter(t=>!t.done),rankC=i=>i<2?"var(--p1)":i<5?"var(--p2)":"var(--p3)",urgent=()=>openT().slice(0,2);
 const ICO={home:'<path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v10h13V10"/>',mail:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',tasks:'<rect x="4" y="4" width="16" height="16" rx="3"/><path d="m8.5 12.5 2.5 2.5 4.5-5"/>',cal:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',trash:'<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>'};
 function ico(n){const e=h("span",{class:"ico"});e.innerHTML='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">'+ICO[n]+'</svg>';return e}
 function renderTabs(){const d=$("#tabs");d.textContent="";
@@ -546,16 +561,16 @@ function hDrag(el,id,mode){
       if(!ev.altKey)hSnap(id,mode);hPlace(id)};
     let fin=false;const up=()=>{if(fin)return;fin=true;for(const t of[el,window]){t.removeEventListener("pointermove",mv);t.removeEventListener("pointerup",up);t.removeEventListener("pointercancel",up)}el.removeEventListener("lostpointercapture",up);window.removeEventListener("blur",up);try{el.releasePointerCapture(e.pointerId)}catch{}sv("enviro.hl4",HL);dragging=false;flushR()};
     el.addEventListener("pointermove",mv);window.addEventListener("pointermove",mv);el.addEventListener("pointerup",up);window.addEventListener("pointerup",up);el.addEventListener("pointercancel",up);window.addEventListener("pointercancel",up);el.addEventListener("lostpointercapture",up);window.addEventListener("blur",up)})}
-function addRow(){const inp=h("input",{placeholder:"Nouvelle tâche (ajoutée en bas de la liste)…"});
-  const cs=cats.length?h("select",{title:"Rubrique de la nouvelle tâche",onchange:()=>{lastCat=cs.value}},h("option",{value:"_",text:"Sans rubrique"}),...cats.map(c=>h("option",{value:c.id,text:c.name}))):null;if(cs&&cats.some(c=>c.id===lastCat))cs.value=lastCat;
-  const submit=()=>{const v=inp.value.trim();if(!v)return;inp.value="";tasks.push({id:"t"+Date.now(),title:v,from:"",url:"",st:"",done:false,ts:Date.now(),cat:cs&&cs.value!=="_"?cs.value:""});sv("enviro.tasks",tasks);renderAll()};
-  inp.addEventListener("keydown",e=>{if(e.key==="Enter")submit()});
+let addFocus=false,subFor=null,colS=ld("enviro.col",{});
+function addRow(){const inp=h("input",{placeholder:"Nouvelle tâche — Entrée pour l’ajouter"});
+  inp.addEventListener("keydown",e=>{if(e.key!=="Enter")return;const v=inp.value.trim();if(!v)return;inp.value="";
+    tasks.push({id:"t"+Date.now(),title:v,from:"",url:"",st:"",done:false,ts:Date.now()});sv("enviro.tasks",tasks);addFocus=true;renderAll()});
+  if(addFocus){addFocus=false;setTimeout(()=>inp.focus(),0)}
   const nd=tasks.filter(t=>t.done).length;let arm=0;
   const minus=h("button",{class:"minus",text:nd?"− "+nd:"−",title:nd?"Supprimer les "+nd+" tâche(s) terminée(s)":"Supprime les tâches cochées « terminées » (aucune pour l’instant)"});
   minus.onclick=()=>{if(!nd){toast("Aucune tâche terminée : coche d’abord les tâches finies.");return}if(!arm){arm=1;minus.textContent="Supprimer "+nd+" ?";minus.classList.add("danger");setTimeout(()=>{if(!minus.isConnected)return;arm=0;minus.textContent="− "+nd;minus.classList.remove("danger")},4000);return}
-    tasks=tasks.filter(t=>!t.done);selT=null;sv("enviro.tasks",tasks);renderAll()};
-  const nr=h("button",{text:"+ Rubrique",title:"Créer une rubrique",onclick:()=>{const i2=h("input",{class:"ed",placeholder:"Nom de la rubrique…"});nr.replaceWith(i2);i2.focus();let fin=false;const ok=()=>{if(fin)return;fin=true;const v=i2.value.trim();if(v){cats.push({id:"c"+Date.now(),name:v,collapsed:false});sv("enviro.cats",cats)}i2.blur();renderAll()};i2.addEventListener("keydown",e=>{if(e.key==="Enter")ok();if(e.key==="Escape"){fin=true;renderAll()}});i2.addEventListener("blur",ok)}});
-  return h("div",{class:"add"},inp,cs,h("button",{text:"+",title:"Ajouter",onclick:submit}),minus,nr)}
+    const ids=new Set(tasks.filter(t=>t.done).map(t=>t.id));tasks=tasks.filter(t=>!t.done);tasks.forEach(t=>{if(ids.has(t.parent))delete t.parent});sv("enviro.tasks",tasks);toast(nd+" tâche(s) terminée(s) supprimée(s).",{l:"Annuler",f:undo});renderAll()};
+  return h("div",{class:"add"},inp,minus)}
 let dragging=false,pendingR=false,lastOk={};
 const RFK={mr:"rep",ml:"lire",su:"star",mb:"mail",ev:"cal"};
 function flushR(){if(pendingR){pendingR=false;renderAll()}}
@@ -593,16 +608,118 @@ function sortable(list,sel,onDrop,own,onCross,handle){
         const ids=others.map(o=>o.dataset.id);ids.splice(i,0,row.dataset.id);onDrop(ids)};
       row.addEventListener("pointermove",mv);window.addEventListener("pointermove",mv);row.addEventListener("pointerup",up);window.addEventListener("pointerup",up);row.addEventListener("pointercancel",up);window.addEventListener("pointercancel",up);row.addEventListener("lostpointercapture",up);window.addEventListener("blur",up)})})}
 let lastClk={id:"",t:0},lastSq={k:"",t:0};
-function taskRow(t,i,full){
-  const cb=h("input",{type:"checkbox",onchange:()=>{t.done=cb.checked;sv("enviro.tasks",tasks);renderAll()}});cb.checked=t.done;
+function validParent(t){return !!t.parent&&tasks.some(x=>x.id===t.parent&&!x.parent&&x!==t)}
+const roots=()=>tasks.filter(t=>!validParent(t)),kids=p=>tasks.filter(t=>t.parent===p.id);
+function setDone(t,v){const ks=validParent(t)?[]:kids(t);t.done=v;
+  if(v){ks.forEach(k=>{if(!k.done){k.done=true;k.auto=true}})}else{ks.forEach(k=>{if(k.auto){k.done=false;delete k.auto}})}
+  sv("enviro.tasks",tasks);renderAll()}
+function taskRow(t,col,full,child){
+  const ks=child?[]:kids(t),isP=ks.length>0;
+  const cb=h("input",{type:"checkbox",onchange:()=>setDone(t,cb.checked)});cb.checked=t.done;
   const lab=t.st==="cours"?"en cours":t.st==="verif"?"à vérifier":"";
   const sb=h("button",{class:"st"+(lab?" on "+t.st:""),title:"Statut : en cours / à vérifier",text:lab||"statut",onclick:e=>{e.stopPropagation();t.st=t.st==="cours"?"verif":t.st==="verif"?"":"cours";sv("enviro.tasks",tasks);renderAll()}});
-  const row=h("div",{class:"tk lk"+(t.done?" done":"")+(full&&selT===t.id?" on":""),"data-id":t.id,title:"Double-clic pour modifier",style:"border-left:4px solid "+(t.done?"var(--bd)":rankC(i))+";padding-left:8px",
+  const tl=h("div",{class:"tl",text:t.title});if(isP)tl.append(h("span",{class:"cnt",text:" ("+ks.filter(k=>!k.done).length+"/"+ks.length+")"}));
+  const row=h("div",{class:"tk lk"+(t.done?" done":"")+(child?" kid":"")+(isP?" par":""),"data-id":t.id,title:"Double-clic : modifier · glisser : déplacer ou imbriquer · clic droit : options",style:"border-left:4px solid "+(t.done?"var(--bd)":col)+";padding-left:8px",
     onclick:e=>{if(e.target.closest("button,input,a"))return;const n=Date.now();
-      if(lastClk.id===t.id&&n-lastClk.t<450){lastClk={id:"",t:0};editTask(t,row.querySelector(".tb"));return}
-      lastClk={id:t.id,t:n};if(full){selT=selT===t.id?null:t.id;renderAll()}}},
-    cb,h("div",{class:"tb"},h("div",{class:"tl",text:t.title}),t.from?h("div",{class:"sn",text:t.from}):null),sb);
+      if(lastClk.id===t.id&&n-lastClk.t<450){lastClk={id:"",t:0};editTask(t,row.querySelector(".tb"));return}lastClk={id:t.id,t:n}},
+    oncontextmenu:e=>{e.preventDefault();taskMenu(e,t)}},
+    isP?h("button",{class:"tgl",title:colS[t.id]?"Déplier":"Replier",text:colS[t.id]?"▸":"▾",onclick:e=>{e.stopPropagation();colS[t.id]=!colS[t.id];sv("enviro.col",colS);renderAll()}}):null,
+    cb,h("div",{class:"tb"},tl,t.from?h("div",{class:"sn",text:t.from}):null),sb);
   return row}
+/* menu contextuel */
+function closeCtx(){document.querySelectorAll(".ctx").forEach(x=>x.remove())}
+function ctxMenu(e,items){closeCtx();const m=h("div",{class:"ctx"});
+  for(const it of items){if(!it)continue;m.append(h("button",{class:it.danger?"danger":"",text:it.l,onclick:()=>{closeCtx();it.f()}}))}
+  document.body.append(m);const z=Z()||1,r=m.getBoundingClientRect();
+  m.style.left=Math.max(4,Math.min(e.clientX,innerWidth-r.width-8))/z+"px";m.style.top=Math.max(4,Math.min(e.clientY,innerHeight-r.height-8))/z+"px";
+  const off=ev=>{if(ev.type==="keydown"&&ev.key!=="Escape")return;if(ev.type==="pointerdown"&&m.contains(ev.target))return;closeCtx();document.removeEventListener("pointerdown",off,true);document.removeEventListener("keydown",off,true)};
+  setTimeout(()=>{document.addEventListener("pointerdown",off,true);document.addEventListener("keydown",off,true)},0)}
+function delTask(t,withKids){const ks=kids(t),keep=[];
+  for(const x of tasks){if(x===t){if(!withKids)ks.forEach(k=>{delete k.parent;keep.push(k)})}else if(ks.includes(x)){}else keep.push(x)}
+  tasks=keep;sv("enviro.tasks",tasks);toast(withKids&&ks.length?"Tâche et sous-tâches supprimées.":"Tâche supprimée.",{l:"Annuler",f:undo});renderAll()}
+function addKid(p,v){const k={id:"t"+Date.now()+Math.random().toString(36).slice(2,5),title:v,from:"",url:"",st:"",done:false,ts:Date.now(),parent:p.id};
+  let m=tasks.indexOf(p);tasks.forEach((z,i)=>{if(z.parent===p.id&&i>m)m=i});tasks.splice(m+1,0,k);sv("enviro.tasks",tasks);renderAll()}
+function taskMenu(e,t){const kid=validParent(t),ks=kids(t),par=kid?tasks.find(x=>x.id===t.parent):null;
+  ctxMenu(e,[
+    kid?null:{l:"＋ Ajouter une sous-tâche",f:()=>{subFor=t.id;colS[t.id]=false;sv("enviro.col",colS);renderAll()}},
+    {l:"✎ Modifier",f:()=>{const el=document.querySelector('.tk[data-id="'+t.id+'"] .tb');if(el)editTask(t,el)}},
+    kid?{l:"↤ Sortir de « "+par.title.slice(0,24)+" »",f:()=>{const i=tasks.indexOf(t);tasks.splice(i,1);delete t.parent;let m=tasks.indexOf(par);tasks.forEach((z,j)=>{if(z.parent===par.id&&j>m)m=j});tasks.splice(m+1,0,t);sv("enviro.tasks",tasks);renderAll()}}:null,
+    {l:ks.length?"🗑 Supprimer cette tâche (garde ses sous-tâches)":"🗑 Supprimer la tâche",danger:true,f:()=>delTask(t,false)},
+    ks.length?{l:"🗑 Supprimer avec ses "+ks.length+" sous-tâche(s)",danger:true,f:()=>delTask(t,true)}:null])}
+function taskList(parent,full){
+  const wrap=h("div",{class:"tlist"}),rs=roots(),open=rs.filter(t=>!t.done);
+  const blockOf=(t,col)=>{const blk=h("div",{class:"tblk","data-id":t.id});blk.append(taskRow(t,col,full,false));const ks=kids(t);
+    if(!colS[t.id]){ks.filter(k=>!k.done).forEach(k=>blk.append(taskRow(k,col,full,true)));ks.filter(k=>k.done).forEach(k=>blk.append(taskRow(k,col,full,true)))}
+    if(subFor===t.id&&!t.done){const sr=h("div",{class:"tsub"}),si=h("input",{class:"ed",placeholder:"Sous-tâche — Entrée pour ajouter, Échap pour finir"});sr.append(si);blk.append(sr);setTimeout(()=>si.focus(),0);
+      si.addEventListener("keydown",ev=>{if(ev.key==="Enter"){const v=si.value.trim();if(!v)return;si.value="";si._gone=true;addKid(t,v)}else if(ev.key==="Escape"){si._gone=true;subFor=null;renderAll()}});
+      si.addEventListener("blur",()=>setTimeout(()=>{if(si._gone||!si.isConnected)return;si._gone=true;const v=si.value.trim();subFor=null;if(v){addKid(t,v)}else renderAll()},0))}
+    return blk};
+  open.forEach((t,i)=>wrap.append(blockOf(t,rankC(i))));
+  wrap.append(h("div",{class:"tend"}));
+  rs.filter(t=>t.done).forEach(t=>wrap.append(blockOf(t,"var(--bd)")));
+  parent.append(wrap);tdnd(wrap)}
+/* glisser-déposer : réordonner, imbriquer (parent/enfant), sortir */
+function tdnd(wrap){
+  const rowsAll=()=>[...wrap.querySelectorAll(".tk:not(.done)")];
+  wrap.querySelectorAll(".tk:not(.done)").forEach(row=>{
+    row.addEventListener("pointerdown",e=>{
+      if(e.button!==0||e.target.closest("button,input,select,a,textarea"))return;
+      const t=tasks.find(x=>x.id===row.dataset.id);if(!t)return;
+      const sx=e.clientX,sy=e.clientY,hasKids=!validParent(t)&&kids(t).length>0;
+      let on=false,gh=null,last=null,fin=false,drop=null,line=null;
+      try{row.setPointerCapture(e.pointerId)}catch{}
+      const info=r=>tasks.find(z=>z.id===r.dataset.id);
+      const clear=()=>{wrap.querySelectorAll(".dzin").forEach(x=>x.classList.remove("dzin"));if(line){line.remove();line=null}};
+      const calc=ev=>{const y=ev.clientY,x=ev.clientX,rows=rowsAll();if(!rows.length)return{k:"end"};
+        let hit=null;for(const r of rows){const b=r.getBoundingClientRect();if(y>=b.top&&y<b.bottom){hit=r;break}}
+        if(!hit){if(y<rows[0].getBoundingClientRect().top)hit=rows[0];else return{k:"end"}}
+        const r=info(hit);if(!r)return null;
+        if(r.id===t.id||(hasKids&&r.parent===t.id))return null;
+        const b=hit.getBoundingClientRect(),rel=Math.max(0,Math.min(1,(y-b.top)/b.height)),z=Z()||1;
+        if(!validParent(r)){
+          if(!hasKids&&rel>=.28&&rel<=.72)return{k:"into",id:r.id,el:hit};
+          if(rel<.5)return{k:"before",id:r.id,el:hit};
+          const vis=!colS[r.id]&&kids(r).some(k=>!k.done&&k.id!==t.id);
+          if(!hasKids&&vis)return{k:"first",id:r.id,el:hit};
+          return{k:"after",id:r.id,el:hit,blk:true}}
+        const p=tasks.find(zz=>zz.id===r.parent);
+        if(hasKids)return rel<.5&&kids(p)[0]===r?{k:"before",id:p.id,el:wrap.querySelector('.tk[data-id="'+p.id+'"]')}:{k:"after",id:p.id,el:hit,blk:true};
+        if(x<b.left+30*z)return{k:"after",id:p.id,el:hit,blk:true};
+        return rel<.5?{k:"before",id:r.id,el:hit}:{k:"afterkid",id:r.id,el:hit}};
+      const show=d=>{clear();if(!d)return;
+        if(d.k==="into"){d.el.classList.add("dzin");return}
+        const wr=wrap.getBoundingClientRect(),z=Z()||1;let yy;
+        if(d.k==="end"){const te=wrap.querySelector(".tend");yy=te?te.getBoundingClientRect().top:wr.bottom}
+        else if(d.k==="before"){yy=d.el.getBoundingClientRect().top}
+        else if(d.k==="after"){const bl=wrap.querySelector('.tblk[data-id="'+d.id+'"]');yy=(bl?[...bl.querySelectorAll(".tk")].pop():d.el).getBoundingClientRect().bottom}
+        else if(d.k==="first"){yy=d.el.getBoundingClientRect().bottom}
+        else yy=d.el.getBoundingClientRect().bottom;
+        line=h("div",{class:"dline"});line.style.top=(yy-wr.top)/z+"px";line.style.marginLeft=(d.k==="first"||d.k==="afterkid"||(d.k==="before"&&info(d.el)&&validParent(info(d.el)))?22:0)+"px";wrap.append(line)};
+      const mv=ev=>{if(ev.buttons===0){up(ev);return}last=ev;const dx=ev.clientX-sx,dy=ev.clientY-sy;
+        if(!on&&Math.hypot(dx,dy)>6){on=true;dragging=true;const r=row.getBoundingClientRect();gh=row.cloneNode(true);gh.classList.add("gh-drag");
+          gh.style.cssText="position:fixed;left:"+r.left/Z()+"px;top:"+r.top/Z()+"px;width:"+r.width/Z()+"px;z-index:9999;pointer-events:none;opacity:.93;box-shadow:0 8px 24px rgba(0,0,0,.3);background:var(--card);border-radius:8px";document.body.append(gh);row.style.opacity=".35"}
+        if(!on)return;gh.style.transform="translate("+dx/Z()+"px,"+dy/Z()+"px)";drop=calc(ev);show(drop)};
+      const up=(ev,abort)=>{if(fin)return;fin=true;if(ev&&(ev.type==="pointercancel"||ev.type==="blur"))abort=true;
+        for(const o of[row,window]){o.removeEventListener("pointermove",mv);o.removeEventListener("pointerup",up);o.removeEventListener("pointercancel",up)}
+        row.removeEventListener("lostpointercapture",up);window.removeEventListener("blur",up);try{row.releasePointerCapture(e.pointerId)}catch{}
+        clear();dragging=false;if(!on){flushR();return}
+        if(gh)gh.remove();row.style.opacity="";
+        if(!abort&&ev&&ev.clientX!=null&&ev.type==="pointerup")drop=calc(ev);
+        if(abort||!drop){flushR();return}
+        applyDrop(t.id,drop)};
+      row.addEventListener("pointermove",mv);window.addEventListener("pointermove",mv);row.addEventListener("pointerup",up);window.addEventListener("pointerup",up);row.addEventListener("pointercancel",up);window.addEventListener("pointercancel",up);row.addEventListener("lostpointercapture",up);window.addEventListener("blur",up)})})}
+function applyDrop(id,d){const t=tasks.find(x=>x.id===id);if(!t)return;
+  const blk=[t,...(validParent(t)?[]:kids(t))],rest=tasks.filter(x=>!blk.includes(x));
+  const ix=x=>rest.indexOf(x),lastOf=r=>{let m=ix(r);rest.forEach((z,i)=>{if(z.parent===r.id&&i>m)m=i});return m};
+  const T=d.id?rest.find(x=>x.id===d.id):null;let at=rest.length,par="";
+  if(d.k!=="end"&&!T)return;
+  if(d.k==="before"){at=ix(T);par=validParent(T)?T.parent:""}
+  else if(d.k==="afterkid"){at=ix(T)+1;par=T.parent}
+  else if(d.k==="after"){at=lastOf(T)+1}
+  else if(d.k==="first"){at=ix(T)+1;par=T.id}
+  else if(d.k==="into"){at=lastOf(T)+1;par=T.id}
+  if(par)t.parent=par;else delete t.parent;
+  rest.splice(at,0,...blk);tasks=rest;sv("enviro.tasks",tasks);renderAll()}
 let topO=ld("enviro.top",[]);
 function catOf(t){return cats.some(c=>c.id===t.cat)?t.cat:"_"}
 function topEntries(){const open=tasks.filter(t=>!t.done&&catOf(t)==="_"),byT=new Map(open.map(t=>[t.id,t])),byC=new Map(cats.map(c=>[c.id,c])),seen=new Set(),out=[];
@@ -611,47 +728,13 @@ function topEntries(){const open=tasks.filter(t=>!t.done&&catOf(t)==="_"),byT=ne
   for(const c of cats)if(!seen.has("c:"+c.id))out.push({c});
   return out}
 const entKey=e=>e.t?e.t.id:"c:"+e.c.id;
-function topSave(keys){topO=keys;sv("enviro.top",topO)}
-function openGroups(){const g=[topEntries().filter(e=>e.t).map(e=>e.t)];for(const c of cats)g.push(tasks.filter(t=>!t.done&&t.cat===c.id));return g.filter(x=>x.length)}
-function reorderCat(ids){const m=new Map(tasks.map(t=>[t.id,t])),inC=new Set(ids);tasks=[...tasks.filter(t=>!t.done&&!inC.has(t.id)),...ids.map(i=>m.get(i)).filter(Boolean),...tasks.filter(t=>t.done)];sv("enviro.tasks",tasks);renderAll()}
-function moveTask(id,to,idx){if(to!=="_"&&!cats.some(c=>c.id===to))return;const t=tasks.find(x=>x.id===id);if(!t||t.done)return;
-  if(to==="_"){const keys=topEntries().map(entKey).filter(k=>k!==id);t.cat="";keys.splice(Math.min(idx,keys.length),0,id);sv("enviro.tasks",tasks);topSave(keys);renderAll();return}
-  t.cat=to;const o=tasks.filter(x=>x!==t&&!x.done),tg=o.filter(x=>x.cat===to),rest=o.filter(x=>x.cat!==to);
-  tg.splice(Math.min(idx,tg.length),0,t);tasks=[...rest,...tg,...tasks.filter(x=>x.done)];sv("enviro.tasks",tasks);renderAll()}
-function mvTop(key,d){const keys=topEntries().map(entKey),i=keys.indexOf(key),j=i+d;if(i<0||j<0||j>=keys.length)return false;[keys[i],keys[j]]=[keys[j],keys[i]];topSave(keys);renderAll();return true}
-function catEdit(c,nameEl){const inp=h("input",{class:"ed",value:c.name});nameEl.replaceWith(inp);inp.focus();inp.select();let fin=false;
-  const ok=()=>{if(fin)return;fin=true;const v=inp.value.trim();if(v)c.name=v;sv("enviro.cats",cats);inp.blur();renderAll()};
-  inp.addEventListener("keydown",e=>{if(e.key==="Enter")ok();if(e.key==="Escape"){fin=true;renderAll()}});inp.addEventListener("blur",ok)}
-let addIn=null;
-function catAdd(g){addIn=g.id;if(g.collapsed){g.collapsed=false;sv("enviro.cats",cats)}renderAll()}
-function catAddInput(g,box){const inp=h("input",{class:"ed",placeholder:"Nouvelle tâche dans « "+g.name+" »…"});box.prepend(inp);setTimeout(()=>inp.focus(),0);let fin=false;
-  const ok=()=>{if(fin)return;fin=true;const v=inp.value.trim();if(v){tasks.push({id:"t"+Date.now(),title:v,from:"",url:"",st:"",done:false,ts:Date.now(),cat:g.id});sv("enviro.tasks",tasks)}inp.blur();renderAll()};
-  inp.addEventListener("keydown",e=>{if(e.key==="Enter")ok();if(e.key==="Escape"){fin=true;renderAll()}});inp.addEventListener("blur",ok)}
-function taskList(parent,full){
-  const wrap=h("div",{class:"rubs","data-drop":"_"}),ROWS=":scope > .tk:not(.done), :scope > .rub.cat";wrap.dataset.rows=ROWS;let li=0;
-  for(const e of topEntries()){
-    if(e.t){wrap.append(taskRow(e.t,li++,full));continue}
-    const g=e.c,ts=tasks.filter(t=>t.cat===g.id),op=ts.filter(t=>!t.done),dn=ts.filter(t=>t.done);
-    const box=h("div",{class:"rubb"}),sec=h("div",{class:"rub cat","data-drop":g.id,"data-id":"c:"+g.id});sec.dataset.rows=".tk:not(.done)";
-    const nm=h("span",{class:"rn",text:g.name}),hd=h("div",{class:"rubh"});
-    hd.append(h("button",{title:g.collapsed?"Déplier":"Replier",text:g.collapsed?"▸":"▾",onclick:()=>{g.collapsed=!g.collapsed;sv("enviro.cats",cats);renderAll()}}),nm,h("span",{class:"cn",text:"("+op.length+")"}),h("span",{class:"sp"}));
-    hd.append(h("button",{title:"Ajouter une tâche dans cette rubrique",text:"+",onclick:()=>catAdd(g)}),
-      h("button",{title:"Monter la rubrique parmi les tâches",text:"▲",onclick:()=>mvTop("c:"+g.id,-1)}),
-      h("button",{title:"Descendre la rubrique parmi les tâches",text:"▼",onclick:()=>mvTop("c:"+g.id,1)}),
-      h("button",{title:"Renommer la rubrique",text:"✎",onclick:()=>catEdit(g,nm)}));
-    const del=h("button",{title:"Supprimer la rubrique « "+g.name+" » (ses tâches sont conservées)",text:"🗑"});let arm=0;
-    del.onclick=()=>{if(!arm){arm=1;del.textContent="Supprimer la rubrique ?";del.classList.add("danger");setTimeout(()=>{if(!del.isConnected)return;arm=0;del.textContent="🗑";del.classList.remove("danger")},4000);return}
-      const keys=topEntries().map(entKey),i=keys.indexOf("c:"+g.id),ids=op.map(t=>t.id);for(const t of tasks)if(t.cat===g.id)t.cat="";
-      if(i>=0)keys.splice(i,1,...ids);cats=cats.filter(c=>c!==g);sv("enviro.cats",cats);sv("enviro.tasks",tasks);topSave(keys);toast("Rubrique supprimée, tâches conservées. Ctrl+Z pour annuler.");renderAll()};
-    hd.append(del);sec.append(hd);
-    if(!g.collapsed){op.forEach((t,i)=>box.append(taskRow(t,i,full)));dn.forEach(t=>box.append(taskRow(t,-1,full)));
-      if(!ts.length)box.append(h("div",{class:"hint",text:"Glisse des tâches ici."}))}
-    sec.append(box);wrap.append(sec);
-    if(!g.collapsed)sortable(box,".tk:not(.done)",reorderCat,g.id,moveTask)}
-  tasks.filter(t=>t.done&&catOf(t)==="_").forEach(t=>wrap.append(taskRow(t,-1,full)));
-  if(cats.length)wrap.append(h("div",{class:"rubfoot",text:"↧ Glisse ici une tâche pour la sortir d’une rubrique"}));
-  parent.append(wrap);
-  sortable(wrap,ROWS,ids=>{topSave(ids);renderAll()},"_",moveTask,".rubh")}
+
+function migCats(){if(!cats.length)return;const out=[],M=new Map(tasks.map(t=>[t.id,t])),now=Date.now();
+  for(const e of topEntries()){if(e.t){delete e.t.cat;out.push(e.t)}else{const c=e.c,pid="p"+c.id;out.push({id:pid,title:c.name,from:"",url:"",st:"",done:false,ts:now});
+    tasks.filter(t=>!t.done&&t.cat===c.id).forEach(t=>{delete t.cat;t.parent=pid;out.push(t)})}}
+  tasks.filter(t=>t.done).forEach(t=>{delete t.cat;out.push(t)});
+  const seen=new Set(out.map(t=>t.id));tasks.filter(t=>!seen.has(t.id)).forEach(t=>{delete t.cat;out.push(t)});
+  tasks=out;cats=[];topO=[];sv("enviro.tasks",tasks);sv("enviro.cats",cats);sv("enviro.top",topO)}
 function sqSize(d){const v=Math.max(8,Math.min(44,ld("enviro.sqs",26)+d));sv("enviro.sqs",v);renderAll()}
 function squares(now){
   const by={};for(const e of ev3)for(const k of evDays(e))(by[k]=by[k]||[]).push(e);
@@ -752,13 +835,13 @@ function rRem(b){const d=remDue(),now=Date.now();
 
 /* ---------- Annuler / rétablir (tâches et rubriques) ---------- */
 let inUndo=false,HIST=[],REDO=[],histT=0;
-const hSnap2=()=>JSON.stringify({tasks,cats,top:topO});
+const hSnap2=()=>JSON.stringify({tasks});
 function histPush(){try{const j=hSnap2();if(!HIST.length){HIST.push(j);return}if(HIST[HIST.length-1]===j)return;REDO=[];const n=Date.now();if(n-histT<80&&HIST.length>1)HIST[HIST.length-1]=j;else HIST.push(j);histT=n;if(HIST.length>60)HIST.shift()}catch(e){}}
-function hRestore(j){const p=JSON.parse(j);inUndo=true;tasks=p.tasks;cats=p.cats;topO=p.top;sv("enviro.tasks",tasks);sv("enviro.cats",cats);sv("enviro.top",topO);inUndo=false;selT=null;renderAll()}
+function hRestore(j){const p=JSON.parse(j);inUndo=true;tasks=p.tasks;sv("enviro.tasks",tasks);inUndo=false;selT=null;renderAll()}
 function undo(){if(HIST.length<2){toast("Rien à annuler");return}REDO.push(HIST.pop());hRestore(HIST[HIST.length-1]);toast("Modification annulée (Ctrl+Y pour rétablir)")}
 function redo(){if(!REDO.length){toast("Rien à rétablir");return}const j=REDO.pop();HIST.push(j);hRestore(j);toast("Modification rétablie")}
-document.addEventListener("keydown",e=>{if(!(e.ctrlKey||e.metaKey)||e.altKey)return;const t=e.target;if(t&&t.matches&&t.matches("input,textarea,select,[contenteditable]"))return;
-  const k=e.key.toLowerCase();if(k==="z"&&!e.shiftKey){e.preventDefault();undo()}else if(k==="y"||(k==="z"&&e.shiftKey)){e.preventDefault();redo()}});
+window.addEventListener("keydown",e=>{if(!(e.ctrlKey||e.metaKey)||e.altKey)return;const t=e.target;if(t&&t.matches&&t.matches("input,textarea,select,[contenteditable]")&&(t.isContentEditable||t.value))return;
+  const k=(e.code==="KeyZ"?"z":e.code==="KeyY"?"y":e.key.toLowerCase());if(k==="z"&&!e.shiftKey){e.preventDefault();undo()}else if(k==="y"||(k==="z"&&e.shiftKey)){e.preventDefault();redo()}},true);
 function renderAll(){if(dragging){pendingR=true;return}pendingR=false;document.querySelectorAll(".gh-drag").forEach(x=>x.remove());const ae=document.activeElement;if(ae&&ae.matches&&ae.matches("#app .add input,#app textarea,#app input.ed")&&ae.value)return;const app=$("#app");app.textContent="";
   const T=TABS.find(t=>t.id===tab);
   const hd=h("div",{class:"vh"},h("h2",{text:tab==="home"?"ARTFX - Chez Ouam":T.l}));
@@ -803,7 +886,7 @@ document.addEventListener("keydown",e=>{if(!(e.ctrlKey||e.metaKey))return;
 function dayTick(){const t=dk(new Date());if(!curDay)curDay=t;
   if(t!==curDay){const old=curDay;curDay=t;if(gd===old||!gd)gd=t;if(mcp)pullRange(true);renderAll()}
   else if(tab==="cal"&&ag==="grid"&&!pn)renderAll()}
-function build(){applyZoom();applyBg();$("#bgb").onclick=bgMenu;gd=dk(new Date());curDay=gd;window.addEventListener("focus",()=>{if(Date.now()-(window.__fr||0)>20000){window.__fr=Date.now();refreshAll()}});setInterval(dayTick,60000);document.addEventListener("visibilitychange",()=>{if(!document.hidden){dayTick();clock()}});setTheme(thm);$("#thm").onclick=()=>setTheme(thm==="auto"?"light":thm==="light"?"dark":"auto");HIST=[hSnap2()];$("#bell").onclick=toggleBell;bell();$("#rmb").onclick=()=>openPane("rem","x");$("#rmb").oncontextmenu=e=>{e.preventDefault();sndOn=!sndOn;sv("enviro.snd",sndOn);remCheck();toast(sndOn?"Son doux activé":"Son doux coupé");if(sndOn)chime()};setInterval(()=>{if(!dragging&&remDue().map(x=>x.key).join()!==remSig)renderAll()},60000);document.addEventListener("pointerdown",()=>{try{if(audioCtx&&audioCtx.state==="suspended")audioCtx.resume()}catch(e){}},{once:true});renderAll();clock();setInterval(clock,30000)}
+function build(){applyZoom();applyBg();$("#bgb").onclick=bgMenu;gd=dk(new Date());curDay=gd;window.addEventListener("focus",()=>{if(Date.now()-(window.__fr||0)>20000){window.__fr=Date.now();refreshAll()}});setInterval(dayTick,60000);document.addEventListener("visibilitychange",()=>{if(!document.hidden){dayTick();clock()}});setTheme(thm);$("#thm").onclick=()=>setTheme(thm==="auto"?"light":thm==="light"?"dark":"auto");migCats();HIST=[hSnap2()];$("#bell").onclick=toggleBell;bell();$("#rmb").onclick=()=>openPane("rem","x");$("#rmb").oncontextmenu=e=>{e.preventDefault();sndOn=!sndOn;sv("enviro.snd",sndOn);remCheck();toast(sndOn?"Son doux activé":"Son doux coupé");if(sndOn)chime()};setInterval(()=>{if(!dragging&&remDue().map(x=>x.key).join()!==remSig)renderAll()},60000);document.addEventListener("pointerdown",()=>{try{if(audioCtx&&audioCtx.state==="suspended")audioCtx.resume()}catch(e){}},{once:true});renderAll();clock();setInterval(clock,30000)}
 
 /* ---------- Mails ---------- */
 function pbtn(n,t){return h("button",{class:"pb p"+n,title:"Ajouter aux tâches : "+PR[n],text:"P"+n,onclick:()=>addTask(t,n)})}
@@ -946,20 +1029,9 @@ function rDayPane(b){const k=pn.id,es=ev3.filter(e=>evDays(e).includes(k)).sort(
   b.append(h("div",{class:"act"},h("button",{class:"btn sm",text:"Voir dans le planning",onclick:()=>toPlanning(k,"")})));
   if(!es.length)b.append(h("div",{class:"msg",text:"Rien ce jour-là."}));
   es.forEach(e=>b.append(evRow(e,true)))}
-function taskTools(){const t=tasks.find(x=>x.id===selT),w=h("span",{class:"tctl tt"});
-  w.append(h("span",{class:"dt",text:t?"Sélection :":"Clique une tâche pour la modifier, la monter ou la supprimer"}));
-  const ed=h("button",{class:"btn sm",title:"Modifier le texte (ou double-clic sur la tâche)",text:"Modifier",onclick:()=>{const el=document.querySelector('.tk[data-id="'+selT+'"] .tb');if(t&&el)editTask(t,el)}});if(!t)ed.disabled=true;w.append(ed);
-  const mvT=d=>{if(t&&catOf(t)==="_"){mvTop(t.id,d);return}const o=openT(),c=t?catOf(t):"_",l=o.filter(x=>catOf(x)===c),i=l.findIndex(x=>x.id===selT),j=i+d;if(i<0||j<0||j>=l.length)return;[l[i],l[j]]=[l[j],l[i]];tasks=[...o.filter(x=>catOf(x)!==c),...l,...tasks.filter(x=>x.done)];sv("enviro.tasks",tasks);renderAll()};
-  for(const[l,d,ti]of[["▲",-1,"Monter"],["▼",1,"Descendre"]]){const bt=h("button",{class:"btn sm",title:ti,text:l,onclick:()=>mvT(d)});if(!t||t.done)bt.disabled=true;w.append(bt)}
-  if(cats.length){const rs=h("select",{title:"Déplacer la tâche dans une rubrique",onchange:()=>{if(t&&rs.value)moveTask(t.id,rs.value,9999)}},h("option",{value:"",text:"Rubrique…"}),h("option",{value:"_",text:"Sans rubrique"}),...cats.map(c=>h("option",{value:c.id,text:c.name})));if(!t||t.done)rs.disabled=true;w.append(rs)}
-  const del=h("button",{class:"btn sm",title:"Supprimer la tâche sélectionnée"},ico("trash"));let arm=0;
-  if(!t)del.disabled=true;
-  del.onclick=()=>{if(!t)return;
-    if(!arm){arm=1;del.textContent="Supprimer ?";del.classList.add("danger");
-      setTimeout(()=>{if(!del.isConnected)return;arm=0;del.textContent="";del.append(ico("trash"));del.classList.remove("danger")},4000);return}
-    tasks=tasks.filter(x=>x!==t);selT=null;sv("enviro.tasks",tasks);toast("Tâche supprimée. Ctrl+Z pour annuler.");renderAll()};
-  const un=h("button",{class:"btn sm",title:"Annuler la dernière modification des tâches (Ctrl+Z)",text:"↶"});un.onclick=undo;w.append(un);
-  w.append(del);return w}
+function taskTools(){const w=h("span",{class:"tctl tt"});
+  w.append(h("span",{class:"dt",text:"Glisse une tâche sur une autre pour l’imbriquer · clic droit : options"}));
+  const un=h("button",{class:"btn sm",title:"Annuler la dernière modification (Ctrl+Z)",text:"↶ Annuler"});un.onclick=undo;w.append(un);return w}
 function rTasks(b){b.textContent="";
   b.append(addRow());
   if(!tasks.length)b.append(h("div",{class:"msg",text:"Aucune tâche. La couleur dépend de la position : les premières sont les plus prioritaires."}));
