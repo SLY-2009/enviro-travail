@@ -1,13 +1,13 @@
 @echo off
-rem Glisse le fichier .zip recu de Claude sur ce fichier : il copie tout au bon endroit puis envoie sur GitHub.
+rem Glisse le zip recu de Claude sur ce fichier. Il copie ce qui a change puis envoie sur GitHub.
 cd /d "%~dp0"
 if "%~1"=="" (
-  echo Glisse le fichier .zip recu sur ce fichier, ne le double-clique pas.
+  echo Glisse le fichier .zip sur ce fichier, ne le double-clique pas.
   pause
   exit /b
 )
 if not exist ".git" (
-  echo Ce fichier doit etre dans le dossier du projet enviro-travail-app, a cote de package.json.
+  echo Ce fichier doit etre dans le dossier enviro-travail-app, a cote de package.json.
   pause
   exit /b
 )
@@ -19,48 +19,54 @@ if not exist "%T%" (
   pause
   exit /b
 )
-set N=0
+set FOUND=0
+set CHG=0
 set NAT=0
-for /r "%T%" %%f in (app.html) do (
-  copy /Y "%%f" "ui\app.html" >nul
-  echo   copie : app.html  vers  ui\   ^(interface^)
-  set /a N+=1
-)
-for /r "%T%" %%f in (loader-index.html) do (
-  copy /Y "%%f" "ui\index.html" >nul
-  echo   copie : page de demarrage  vers  ui\index.html
-  set /a N+=1
-  set /a NAT+=1
-)
-for /r "%T%" %%f in (main.rs google.rs) do (
-  copy /Y "%%f" "src-tauri\src\" >nul
-  echo   copie : %%~nxf  vers  src-tauri\src\
-  set /a N+=1
-  set /a NAT+=1
-)
-for /r "%T%" %%f in (release.yml) do (
-  if not exist ".github\workflows" mkdir ".github\workflows"
-  copy /Y "%%f" ".github\workflows\" >nul
-  echo   copie : %%~nxf  vers  .github\workflows\
-  set /a N+=1
-  set /a NAT+=1
-)
-if %N%==0 (
+call :cp app.html "ui\app.html" 0
+call :cp loader-index.html "ui\index.html" 1
+call :cp main.rs "src-tauri\src\main.rs" 1
+call :cp google.rs "src-tauri\src\google.rs" 1
+call :cp release.yml ".github\workflows\release.yml" 1
+if %FOUND%==0 (
   echo Aucun fichier reconnu dans ce zip : rien n'a ete envoye.
   pause
   exit /b
 )
 echo.
-echo %N% fichier(s) copie(s). Envoi sur GitHub...
+if %CHG%==0 (
+  echo Tout etait deja a jour : rien a envoyer.
+  pause
+  exit /b
+)
+echo %CHG% fichier^(s^) modifie^(s^). Envoi sur GitHub...
 git add -A
 git commit -m "MAJ %date% %time%"
 git push
 echo.
 if %NAT%==0 (
-  echo Envoye. Il n'y a PAS de construction a attendre : ferme puis rouvre l'application,
-  echo elle charge la nouvelle interface au lancement.
+  echo Envoye. PAS de construction a attendre : ferme puis rouvre l'application.
 ) else (
-  echo Envoye. Cette mise a jour contient du code de l'application : la construction prend 15 a 25 minutes
-  echo ^(onglet Actions du depot GitHub^). Ensuite, ouvre simplement l'application.
+  echo Envoye. Le code de l'application a change : construction de 15 a 25 minutes
+  echo ^(onglet Actions sur GitHub^). Ensuite ouvre simplement l'application.
 )
 pause
+exit /b
+
+:cp
+set "SRC="
+for /r "%T%" %%f in (%~1) do if exist "%%f" set "SRC=%%f"
+if not defined SRC exit /b
+set /a FOUND+=1
+if exist "%~2" (
+  fc /b "%SRC%" "%~2" >nul 2>&1
+  if not errorlevel 1 (
+    echo   deja a jour : %~1
+    exit /b
+  )
+)
+for %%d in ("%~2") do if not exist "%%~dpd" mkdir "%%~dpd"
+copy /Y "%SRC%" "%~2" >nul
+echo   copie : %~1
+set /a CHG+=1
+if "%~3"=="1" set /a NAT+=1
+exit /b

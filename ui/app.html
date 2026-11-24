@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="fr"><head><meta charset="utf-8">
-<meta name="enviro-ui" content="20261123-1613">
+<meta name="enviro-ui" content="20261124-1200">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Enviro Travail</title>
 <style>
@@ -182,6 +182,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 :root[data-theme="light"]{--hd:#cfccbf}
 .card .wh{background:var(--hd)}
 .card .wh h3{color:var(--tx);font-weight:700}
+#hc-dj .wh{background:linear-gradient(rgba(217,119,6,.30),rgba(217,119,6,.30)),var(--hd);border-bottom-color:rgba(217,119,6,.6)}
 .mbg{z-index:1000}
 .mdl{max-height:calc(88vh / var(--z,1))}
 .add button.danger{background:var(--p1);color:#fff;border-color:var(--p1)}
@@ -508,9 +509,9 @@ function card(t,id,key){const body=h("div",{class:"wb"});
   return body}
 /* mise en page libre de l'accueil */
 function hDef(){const W=Math.max(300,($("#hb")||{}).clientWidth||1200),g=12;
-  if(W>=1000){const w=Math.floor((W-3*g)/4);return{su:{x:0,y:0,w,h:420},mr:{x:w+g,y:0,w,h:420},ml:{x:2*(w+g),y:0,w,h:420},tk:{x:3*(w+g),y:0,w,h:420},ev:{x:0,y:432,w,h:420},jr:{x:w+g,y:432,w:2*w+g,h:420},dj:{x:3*(w+g),y:432,w,h:420}}}
-  if(W>=700){const w=Math.floor((W-g)/2);return{su:{x:0,y:0,w,h:380},mr:{x:w+g,y:0,w,h:380},ml:{x:0,y:392,w,h:380},tk:{x:w+g,y:392,w,h:380},ev:{x:0,y:784,w,h:400},jr:{x:w+g,y:784,w,h:400},dj:{x:0,y:1196,w,h:380}}}
-  return{su:{x:0,y:0,w:W,h:340},mr:{x:0,y:352,w:W,h:340},ml:{x:0,y:704,w:W,h:340},tk:{x:0,y:1056,w:W,h:360},ev:{x:0,y:1428,w:W,h:300},jr:{x:0,y:1740,w:W,h:520},dj:{x:0,y:2272,w:W,h:380}}}
+  if(W>=1000){const w=Math.floor((W-3*g)/4);return{su:{x:0,y:0,w,h:420},mr:{x:w+g,y:0,w,h:420},ml:{x:2*(w+g),y:0,w,h:420},tk:{x:3*(w+g),y:0,w,h:420},ev:{x:0,y:432,w,h:640},jr:{x:w+g,y:432,w:2*w+g,h:640},dj:{x:3*(w+g),y:432,w,h:640}}}
+  if(W>=700){const w=Math.floor((W-g)/2);return{su:{x:0,y:0,w,h:380},mr:{x:w+g,y:0,w,h:380},ml:{x:0,y:392,w,h:380},tk:{x:w+g,y:392,w,h:380},ev:{x:0,y:784,w,h:640},jr:{x:w+g,y:784,w,h:640},dj:{x:0,y:1436,w,h:380}}}
+  return{su:{x:0,y:0,w:W,h:340},mr:{x:0,y:352,w:W,h:340},ml:{x:0,y:704,w:W,h:340},tk:{x:0,y:1056,w:W,h:360},ev:{x:0,y:1428,w:W,h:300},jr:{x:0,y:1740,w:W,h:660},dj:{x:0,y:2412,w:W,h:380}}}
 function hFit(){const b=$("#hb");if(!b)return;let m=0;for(const k in HL)m=Math.max(m,HL[k].y+HL[k].h);b.style.height=(m+8)+"px"}
 function hPlace(id){const e=$("#hc-"+id),l=HL[id];if(!e||!l)return;e.style.left=l.x+"px";e.style.top=l.y+"px";e.style.width=l.w+"px";e.style.height=l.h+"px";e.style.zIndex=l.z||1;hFit()}
 function hFront(id){const ks=Object.keys(HL).sort((a,b)=>(HL[a].z||1)-(HL[b].z||1)).filter(k=>k!==id);ks.push(id);
@@ -651,6 +652,7 @@ function rHome(b){b.textContent="";
   const bs=[["su",c7],["mr",c5],["ml",c6],["tk",c2],["ev",c1],["jr",c3],["dj",c4]];
   for(const[,c]of bs)hb.append(c._sec);
   if(!HL)HL=hDef();const dd=hDef();for(const[k]of bs)if(!HL[k])HL[k]=dd[k];
+  if(ld("enviro.hlv",1)<2){HL.jr.h=Math.max(HL.jr.h,dd.jr.h);if(HL.tk&&HL.dj){HL.dj.x=HL.tk.x;HL.dj.w=HL.tk.w;HL.dj.y=HL.tk.y+HL.tk.h+12}sv("enviro.hl4",HL);sv("enviro.hlv",2)}
   for(const[k,c]of bs){hPlace(k);c._sec.addEventListener("pointerdown",()=>{hFront(k);sv("enviro.hl4",HL)},true);hDrag(c._sec.querySelector(".wh"),k,"move");hDrag(c._sec.querySelector(".rz"),k,"size")}}
 function renderAll(){if(dragging){pendingR=true;return}pendingR=false;document.querySelectorAll(".gh-drag").forEach(x=>x.remove());const ae=document.activeElement;if(ae&&ae.matches&&ae.matches("#app .add input,#app textarea,#app input.ed")&&ae.value)return;const app=$("#app");app.textContent="";
   const T=TABS.find(t=>t.id===tab);
