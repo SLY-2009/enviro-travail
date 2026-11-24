@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="fr"><head><meta charset="utf-8">
-<meta name="enviro-ui" content="20261124-1530">
+<meta name="enviro-ui" content="20261124-1600">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Enviro Travail</title>
 <style>
@@ -553,7 +553,7 @@ function addRow(){const inp=h("input",{placeholder:"Nouvelle tâche (ajoutée en
   const minus=h("button",{class:"minus",text:nd?"− "+nd:"−",title:nd?"Supprimer les "+nd+" tâche(s) terminée(s)":"Supprime les tâches cochées « terminées » (aucune pour l’instant)"});
   minus.onclick=()=>{if(!nd){toast("Aucune tâche terminée : coche d’abord les tâches finies.");return}if(!arm){arm=1;minus.textContent="Supprimer "+nd+" ?";minus.classList.add("danger");setTimeout(()=>{if(!minus.isConnected)return;arm=0;minus.textContent="− "+nd;minus.classList.remove("danger")},4000);return}
     tasks=tasks.filter(t=>!t.done);selT=null;sv("enviro.tasks",tasks);renderAll()};
-  const nr=h("button",{text:"+ Rubrique",title:"Créer une rubrique",onclick:()=>{const i2=h("input",{class:"ed",placeholder:"Nom de la rubrique…"});nr.replaceWith(i2);i2.focus();let fin=false;const ok=()=>{if(fin)return;fin=true;const v=i2.value.trim();if(v){cats.push({id:"c"+Date.now(),name:v,collapsed:false});sv("enviro.cats",cats)}renderAll()};i2.addEventListener("keydown",e=>{if(e.key==="Enter")ok();if(e.key==="Escape"){fin=true;renderAll()}});i2.addEventListener("blur",ok)}});
+  const nr=h("button",{text:"+ Rubrique",title:"Créer une rubrique",onclick:()=>{const i2=h("input",{class:"ed",placeholder:"Nom de la rubrique…"});nr.replaceWith(i2);i2.focus();let fin=false;const ok=()=>{if(fin)return;fin=true;const v=i2.value.trim();if(v){cats.push({id:"c"+Date.now(),name:v,collapsed:false});sv("enviro.cats",cats)}i2.blur();renderAll()};i2.addEventListener("keydown",e=>{if(e.key==="Enter")ok();if(e.key==="Escape"){fin=true;renderAll()}});i2.addEventListener("blur",ok)}});
   return h("div",{class:"add"},inp,cs,h("button",{text:"+",title:"Ajouter",onclick:submit}),minus,nr)}
 let dragging=false,pendingR=false,lastOk={};
 const RFK={mr:"rep",ml:"lire",su:"star",mb:"mail",ev:"cal"};
@@ -569,27 +569,28 @@ function sortable(list,sel,onDrop,own,onCross,handle){
     row.addEventListener("pointerdown",e=>{
       if(e.button!==0||e.target.closest("button,input,select,a,textarea"))return;
       if(handle&&!e.target.closest(handle))return;
-      const sx=e.clientX,sy=e.clientY;let on=false,gh=null;
+      const sx=e.clientX,sy=e.clientY;let on=false,gh=null,last=null,fin=false;
       try{row.setPointerCapture(e.pointerId)}catch{}
       const target=ev=>own?document.elementsFromPoint(ev.clientX,ev.clientY).find(x=>x.dataset&&x.dataset.drop&&x.dataset.drop!==own):null;
-      const mv=ev=>{const dx=ev.clientX-sx,dy=ev.clientY-sy;
+      const mv=ev=>{if(ev.buttons===0){up(ev);return}last=ev;const dx=ev.clientX-sx,dy=ev.clientY-sy;
         if(!on&&Math.hypot(dx,dy)>6){on=true;dragging=true;
           if(own){const r=row.getBoundingClientRect();gh=row.cloneNode(true);gh.classList.add("gh-drag");gh.style.cssText="position:fixed;left:"+r.left/Z()+"px;top:"+r.top/Z()+"px;width:"+r.width/Z()+"px;z-index:9999;pointer-events:none;opacity:.93;box-shadow:0 8px 24px rgba(0,0,0,.3);background:var(--card);border-radius:8px";document.body.append(gh);row.style.opacity=".35"}
           else row.classList.add("drag")}
         if(!on)return;
         if(gh){gh.style.transform="translate("+dx/Z()+"px,"+dy/Z()+"px)";document.querySelectorAll(".dz").forEach(x=>x.classList.remove("dz"));const tg=target(ev);if(tg)tg.classList.add("dz")}
         else row.style.transform="translateY("+dy/Z()+"px)"};
-      const up=ev=>{row.removeEventListener("pointermove",mv);row.removeEventListener("pointerup",up);row.removeEventListener("pointercancel",up);
+      const up=(ev,abort)=>{if(fin)return;fin=true;if(ev&&(ev.type==="pointercancel"||ev.type==="blur"||ev.type==="lostpointercapture"&&!(ev.clientX>0)))abort=true;if(!ev||ev.clientX==null)ev=last||{clientX:sx,clientY:sy};for(const t of[row,window]){t.removeEventListener("pointermove",mv);t.removeEventListener("pointerup",up);t.removeEventListener("pointercancel",up)}row.removeEventListener("lostpointercapture",up);window.removeEventListener("blur",up);try{row.releasePointerCapture(e.pointerId)}catch{}
         document.querySelectorAll(".dz").forEach(x=>x.classList.remove("dz"));
         dragging=false;
         if(!on){flushR();return}
         if(gh)gh.remove();row.style.opacity="";row.classList.remove("drag");row.style.transform="";
+        if(abort){flushR();return}
         const tg=target(ev);
         if(tg&&onCross){const rows=[...tg.querySelectorAll(sel)];let i=rows.findIndex(o=>{const r=o.getBoundingClientRect();return ev.clientY<r.top+r.height/2});if(i<0)i=rows.length;onCross(row.dataset.id,tg.dataset.drop,i);return}
         const others=[...list.querySelectorAll(sel)].filter(x=>x!==row);
         let i=others.findIndex(o=>{const r=o.getBoundingClientRect();return ev.clientY<r.top+r.height/2});if(i<0)i=others.length;
         const ids=others.map(o=>o.dataset.id);ids.splice(i,0,row.dataset.id);onDrop(ids)};
-      row.addEventListener("pointermove",mv);row.addEventListener("pointerup",up);row.addEventListener("pointercancel",up)})})}
+      row.addEventListener("pointermove",mv);window.addEventListener("pointermove",mv);row.addEventListener("pointerup",up);window.addEventListener("pointerup",up);row.addEventListener("pointercancel",up);window.addEventListener("pointercancel",up);row.addEventListener("lostpointercapture",up);window.addEventListener("blur",up)})})}
 let lastClk={id:"",t:0},lastSq={k:"",t:0};
 function taskRow(t,i,full){
   const cb=h("input",{type:"checkbox",onchange:()=>{t.done=cb.checked;sv("enviro.tasks",tasks);renderAll()}});cb.checked=t.done;
@@ -608,27 +609,35 @@ function moveTask(id,to,idx){if(to!=="_"&&!cats.some(c=>c.id===to))return;const 
   t.cat=to==="_"?"":to;const o=tasks.filter(x=>x!==t&&!x.done),tg=o.filter(x=>catOf(x)===to),rest=o.filter(x=>catOf(x)!==to);
   tg.splice(Math.min(idx,tg.length),0,t);tasks=[...rest,...tg,...tasks.filter(x=>x.done)];sv("enviro.tasks",tasks);renderAll()}
 function catEdit(c,nameEl){const inp=h("input",{class:"ed",value:c.name});nameEl.replaceWith(inp);inp.focus();inp.select();let fin=false;
-  const ok=()=>{if(fin)return;fin=true;const v=inp.value.trim();if(v)c.name=v;sv("enviro.cats",cats);renderAll()};
+  const ok=()=>{if(fin)return;fin=true;const v=inp.value.trim();if(v)c.name=v;sv("enviro.cats",cats);inp.blur();renderAll()};
+  inp.addEventListener("keydown",e=>{if(e.key==="Enter")ok();if(e.key==="Escape"){fin=true;renderAll()}});inp.addEventListener("blur",ok)}
+let addIn=null;
+function catAdd(g){addIn=g.id;if(g.collapsed){g.collapsed=false;sv("enviro.cats",cats)}renderAll()}
+function catAddInput(g,box){const inp=h("input",{class:"ed",placeholder:"Nouvelle tâche dans « "+g.name+" »…"});box.prepend(inp);setTimeout(()=>inp.focus(),0);let fin=false;
+  const ok=()=>{if(fin)return;fin=true;const v=inp.value.trim();if(v){tasks.push({id:"t"+Date.now(),title:v,from:"",url:"",st:"",done:false,ts:Date.now(),cat:g.id});sv("enviro.tasks",tasks)}inp.blur();renderAll()};
   inp.addEventListener("keydown",e=>{if(e.key==="Enter")ok();if(e.key==="Escape"){fin=true;renderAll()}});inp.addEventListener("blur",ok)}
 function taskList(parent,full){
   const wrap=h("div",{class:"rubs"}),gs=cats.length?[{id:"_",name:"Sans rubrique"},...cats]:[{id:"_"}];
   for(const g of gs){
     const ts=tasks.filter(t=>catOf(t)===g.id),op=ts.filter(t=>!t.done),dn=ts.filter(t=>t.done),real=g.id!=="_";
+    const box=h("div",{class:"rubb"});
     const sec=h("div",{class:"rub"+(real?" cat":""),"data-drop":g.id});if(real)sec.dataset.id=g.id;
     if(cats.length){
       const nm=h("span",{class:"rn",text:g.name});
       const hd=h("div",{class:"rubh"+(real?"":" fixed")});
       if(real){hd.append(h("button",{title:g.collapsed?"Déplier":"Replier",text:g.collapsed?"▸":"▾",onclick:()=>{g.collapsed=!g.collapsed;sv("enviro.cats",cats);renderAll()}}))}
       hd.append(nm,h("span",{class:"cn",text:"("+op.length+")"}),h("span",{class:"sp"}));
-      if(real){hd.append(h("button",{title:"Renommer la rubrique",text:"✎",onclick:()=>catEdit(g,nm)}));
+      if(real){const mvC=d=>{const i=cats.indexOf(g),j=i+d;if(j<0||j>=cats.length)return;[cats[i],cats[j]]=[cats[j],cats[i]];sv("enviro.cats",cats);renderAll()};
+        hd.append(h("button",{title:"Ajouter une tâche dans cette rubrique",text:"+",onclick:()=>catAdd(g)}),h("button",{title:"Monter la rubrique (plus prioritaire)",text:"▲",onclick:()=>mvC(-1)}),h("button",{title:"Descendre la rubrique",text:"▼",onclick:()=>mvC(1)}));
+        hd.append(h("button",{title:"Renommer la rubrique",text:"✎",onclick:()=>catEdit(g,nm)}));
         const del=h("button",{title:"Supprimer la rubrique (les tâches sont conservées)",text:"✕"});let arm=0;
         del.onclick=()=>{if(!arm){arm=1;del.textContent="Supprimer ?";del.classList.add("danger");setTimeout(()=>{if(!del.isConnected)return;arm=0;del.textContent="✕";del.classList.remove("danger")},4000);return}
           for(const t of tasks)if(t.cat===g.id)t.cat="";cats=cats.filter(c=>c!==g);sv("enviro.cats",cats);sv("enviro.tasks",tasks);renderAll()};
         hd.append(del)}
       sec.append(hd)}
-    const box=h("div",{class:"rubb"});
     if(!g.collapsed){op.forEach((t,i)=>box.append(taskRow(t,i,full)));dn.forEach(t=>box.append(taskRow(t,-1,full)));
       if(!ts.length&&cats.length)box.append(h("div",{class:"hint",text:real?"Glisse des tâches ici.":"Glisse ici une tâche pour la sortir d’une rubrique."}))}
+    if(addIn===g.id){addIn=null;catAddInput(g,box)}
     sec.append(box);wrap.append(sec);
     if(!g.collapsed)sortable(box,".tk:not(.done)",reorderCat,g.id,moveTask)}
   parent.append(wrap);
