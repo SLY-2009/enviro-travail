@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="fr"><head><meta charset="utf-8">
-<meta name="enviro-ui" content="20261124-1600">
+<meta name="enviro-ui" content="20261124-1630">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Enviro Travail</title>
 <style>
@@ -124,6 +124,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .rubh .sp{flex:1}
 .rubh button{padding:0 6px;font-size:12px}
 .rub.dz{outline:2px dashed var(--ac);outline-offset:1px}
+.rubfoot{margin-top:6px;border:1px dashed var(--bd);border-radius:6px;padding:6px;text-align:center;color:var(--mu);font-size:11px}
 .rub .hint{color:var(--mu);font-size:12px;padding:6px 8px}
 .alert{background:var(--p1);color:#fff;border-radius:10px;padding:8px 14px;margin:8px 0;cursor:pointer;font-weight:600}
 .th-h{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
@@ -446,9 +447,9 @@ const $=s=>document.querySelector(s);
 function h(t,a={},...k){const e=document.createElement(t);for(const[n,v]of Object.entries(a)){if(n==="class")e.className=v;else if(n.startsWith("on"))e.addEventListener(n.slice(2),v);else if(n==="text")e.textContent=v;else e.setAttribute(n,v)}k.flat().forEach(c=>c!=null&&e.append(c));return e}
 let CFG={},dbRef=null,dbT=null;
 const ld=(k,d)=>{if(k in CFG)return CFG[k]===undefined?d:CFG[k];try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch{return d}};
-const sv=(k,v)=>{CFG[k]=v;try{localStorage.setItem(k,JSON.stringify(v))}catch{}if(dbRef){clearTimeout(dbT);dbT=setTimeout(saveCfg,900)}};
+const sv=(k,v)=>{CFG[k]=v;if(!inUndo&&(k==="enviro.tasks"||k==="enviro.cats"||k==="enviro.top"))histPush();try{localStorage.setItem(k,JSON.stringify(v))}catch{}if(dbRef){clearTimeout(dbT);dbT=setTimeout(saveCfg,900)}};
 function saveCfg(){if(!dbRef)return;try{dbRef.set({cfg:JSON.stringify(CFG),ts:Date.now()}).catch(()=>{})}catch{}}
-function applyCfg(){cats=ld("enviro.cats",[]);tasks=ld("enviro.tasks",[]);migTasks();imp=ld("enviro.imp",{});mo=ld("enviro.mo",{rep:[],lire:[]});mg=ld("enviro.mg","inbox");tab=ld("enviro.tab","home");if(!TABS.some(t=>t.id===tab))tab="home";ag=ld("enviro.ag2","grid");gv=ld("enviro.gv","week");HL=ld("enviro.hl4",null);thm=ld("enviro.thm","auto");zoomF=ld("enviro.zoom",1);applyZoom();bgC=ld("enviro.bg","");applyBg();notif=ld("enviro.notif",false);setTheme(thm);bell();renderAll()}
+function applyCfg(){topO=ld("enviro.top",[]);cats=ld("enviro.cats",[]);tasks=ld("enviro.tasks",[]);migTasks();imp=ld("enviro.imp",{});mo=ld("enviro.mo",{rep:[],lire:[]});mg=ld("enviro.mg","inbox");tab=ld("enviro.tab","home");if(!TABS.some(t=>t.id===tab))tab="home";ag=ld("enviro.ag2","grid");gv=ld("enviro.gv","week");HL=ld("enviro.hl4",null);thm=ld("enviro.thm","auto");zoomF=ld("enviro.zoom",1);applyZoom();bgC=ld("enviro.bg","");applyBg();notif=ld("enviro.notif",false);setTheme(thm);bell();renderAll()}
 async function loadCfg(){try{
   if(!window.claude)return;
   const[db,u]=await Promise.all([window.claude.use("db"),window.claude.use("user")]);if(!db||!u)return;
@@ -568,10 +569,10 @@ function sortable(list,sel,onDrop,own,onCross,handle){
   list.querySelectorAll(sel).forEach(row=>{
     row.addEventListener("pointerdown",e=>{
       if(e.button!==0||e.target.closest("button,input,select,a,textarea"))return;
-      if(handle&&!e.target.closest(handle))return;
+      if(handle&&row.classList.contains("rub")&&!e.target.closest(handle))return;
       const sx=e.clientX,sy=e.clientY;let on=false,gh=null,last=null,fin=false;
       try{row.setPointerCapture(e.pointerId)}catch{}
-      const target=ev=>own?document.elementsFromPoint(ev.clientX,ev.clientY).find(x=>x.dataset&&x.dataset.drop&&x.dataset.drop!==own):null;
+      const target=ev=>{if(!own||row.classList.contains("rub"))return null;const el=document.elementsFromPoint(ev.clientX,ev.clientY).find(x=>x.dataset&&x.dataset.drop);return el&&el.dataset.drop!==own?el:null};
       const mv=ev=>{if(ev.buttons===0){up(ev);return}last=ev;const dx=ev.clientX-sx,dy=ev.clientY-sy;
         if(!on&&Math.hypot(dx,dy)>6){on=true;dragging=true;
           if(own){const r=row.getBoundingClientRect();gh=row.cloneNode(true);gh.classList.add("gh-drag");gh.style.cssText="position:fixed;left:"+r.left/Z()+"px;top:"+r.top/Z()+"px;width:"+r.width/Z()+"px;z-index:9999;pointer-events:none;opacity:.93;box-shadow:0 8px 24px rgba(0,0,0,.3);background:var(--card);border-radius:8px";document.body.append(gh);row.style.opacity=".35"}
@@ -586,7 +587,7 @@ function sortable(list,sel,onDrop,own,onCross,handle){
         if(gh)gh.remove();row.style.opacity="";row.classList.remove("drag");row.style.transform="";
         if(abort){flushR();return}
         const tg=target(ev);
-        if(tg&&onCross){const rows=[...tg.querySelectorAll(sel)];let i=rows.findIndex(o=>{const r=o.getBoundingClientRect();return ev.clientY<r.top+r.height/2});if(i<0)i=rows.length;onCross(row.dataset.id,tg.dataset.drop,i);return}
+        if(tg&&onCross){const rows=[...tg.querySelectorAll(tg.dataset.rows||sel)];let i=rows.findIndex(o=>{const r=o.getBoundingClientRect();return ev.clientY<r.top+r.height/2});if(i<0)i=rows.length;onCross(row.dataset.id,tg.dataset.drop,i);return}
         const others=[...list.querySelectorAll(sel)].filter(x=>x!==row);
         let i=others.findIndex(o=>{const r=o.getBoundingClientRect();return ev.clientY<r.top+r.height/2});if(i<0)i=others.length;
         const ids=others.map(o=>o.dataset.id);ids.splice(i,0,row.dataset.id);onDrop(ids)};
@@ -602,12 +603,22 @@ function taskRow(t,i,full){
       lastClk={id:t.id,t:n};if(full){selT=selT===t.id?null:t.id;renderAll()}}},
     cb,h("div",{class:"tb"},h("div",{class:"tl",text:t.title}),t.from?h("div",{class:"sn",text:t.from}):null),sb);
   return row}
+let topO=ld("enviro.top",[]);
 function catOf(t){return cats.some(c=>c.id===t.cat)?t.cat:"_"}
-function openGroups(){const m={};for(const t of tasks.filter(x=>!x.done)){const k=catOf(t);(m[k]=m[k]||[]).push(t)}return Object.values(m)}
+function topEntries(){const open=tasks.filter(t=>!t.done&&catOf(t)==="_"),byT=new Map(open.map(t=>[t.id,t])),byC=new Map(cats.map(c=>[c.id,c])),seen=new Set(),out=[];
+  for(const k of topO){if(seen.has(k))continue;if(String(k).startsWith("c:")){const c=byC.get(k.slice(2));if(c){out.push({c});seen.add(k)}}else{const t=byT.get(k);if(t){out.push({t});seen.add(k)}}}
+  for(const t of open)if(!seen.has(t.id))out.push({t});
+  for(const c of cats)if(!seen.has("c:"+c.id))out.push({c});
+  return out}
+const entKey=e=>e.t?e.t.id:"c:"+e.c.id;
+function topSave(keys){topO=keys;sv("enviro.top",topO)}
+function openGroups(){const g=[topEntries().filter(e=>e.t).map(e=>e.t)];for(const c of cats)g.push(tasks.filter(t=>!t.done&&t.cat===c.id));return g.filter(x=>x.length)}
 function reorderCat(ids){const m=new Map(tasks.map(t=>[t.id,t])),inC=new Set(ids);tasks=[...tasks.filter(t=>!t.done&&!inC.has(t.id)),...ids.map(i=>m.get(i)).filter(Boolean),...tasks.filter(t=>t.done)];sv("enviro.tasks",tasks);renderAll()}
 function moveTask(id,to,idx){if(to!=="_"&&!cats.some(c=>c.id===to))return;const t=tasks.find(x=>x.id===id);if(!t||t.done)return;
-  t.cat=to==="_"?"":to;const o=tasks.filter(x=>x!==t&&!x.done),tg=o.filter(x=>catOf(x)===to),rest=o.filter(x=>catOf(x)!==to);
+  if(to==="_"){const keys=topEntries().map(entKey).filter(k=>k!==id);t.cat="";keys.splice(Math.min(idx,keys.length),0,id);sv("enviro.tasks",tasks);topSave(keys);renderAll();return}
+  t.cat=to;const o=tasks.filter(x=>x!==t&&!x.done),tg=o.filter(x=>x.cat===to),rest=o.filter(x=>x.cat!==to);
   tg.splice(Math.min(idx,tg.length),0,t);tasks=[...rest,...tg,...tasks.filter(x=>x.done)];sv("enviro.tasks",tasks);renderAll()}
+function mvTop(key,d){const keys=topEntries().map(entKey),i=keys.indexOf(key),j=i+d;if(i<0||j<0||j>=keys.length)return false;[keys[i],keys[j]]=[keys[j],keys[i]];topSave(keys);renderAll();return true}
 function catEdit(c,nameEl){const inp=h("input",{class:"ed",value:c.name});nameEl.replaceWith(inp);inp.focus();inp.select();let fin=false;
   const ok=()=>{if(fin)return;fin=true;const v=inp.value.trim();if(v)c.name=v;sv("enviro.cats",cats);inp.blur();renderAll()};
   inp.addEventListener("keydown",e=>{if(e.key==="Enter")ok();if(e.key==="Escape"){fin=true;renderAll()}});inp.addEventListener("blur",ok)}
@@ -617,31 +628,30 @@ function catAddInput(g,box){const inp=h("input",{class:"ed",placeholder:"Nouvell
   const ok=()=>{if(fin)return;fin=true;const v=inp.value.trim();if(v){tasks.push({id:"t"+Date.now(),title:v,from:"",url:"",st:"",done:false,ts:Date.now(),cat:g.id});sv("enviro.tasks",tasks)}inp.blur();renderAll()};
   inp.addEventListener("keydown",e=>{if(e.key==="Enter")ok();if(e.key==="Escape"){fin=true;renderAll()}});inp.addEventListener("blur",ok)}
 function taskList(parent,full){
-  const wrap=h("div",{class:"rubs"}),gs=cats.length?[{id:"_",name:"Sans rubrique"},...cats]:[{id:"_"}];
-  for(const g of gs){
-    const ts=tasks.filter(t=>catOf(t)===g.id),op=ts.filter(t=>!t.done),dn=ts.filter(t=>t.done),real=g.id!=="_";
-    const box=h("div",{class:"rubb"});
-    const sec=h("div",{class:"rub"+(real?" cat":""),"data-drop":g.id});if(real)sec.dataset.id=g.id;
-    if(cats.length){
-      const nm=h("span",{class:"rn",text:g.name});
-      const hd=h("div",{class:"rubh"+(real?"":" fixed")});
-      if(real){hd.append(h("button",{title:g.collapsed?"Déplier":"Replier",text:g.collapsed?"▸":"▾",onclick:()=>{g.collapsed=!g.collapsed;sv("enviro.cats",cats);renderAll()}}))}
-      hd.append(nm,h("span",{class:"cn",text:"("+op.length+")"}),h("span",{class:"sp"}));
-      if(real){const mvC=d=>{const i=cats.indexOf(g),j=i+d;if(j<0||j>=cats.length)return;[cats[i],cats[j]]=[cats[j],cats[i]];sv("enviro.cats",cats);renderAll()};
-        hd.append(h("button",{title:"Ajouter une tâche dans cette rubrique",text:"+",onclick:()=>catAdd(g)}),h("button",{title:"Monter la rubrique (plus prioritaire)",text:"▲",onclick:()=>mvC(-1)}),h("button",{title:"Descendre la rubrique",text:"▼",onclick:()=>mvC(1)}));
-        hd.append(h("button",{title:"Renommer la rubrique",text:"✎",onclick:()=>catEdit(g,nm)}));
-        const del=h("button",{title:"Supprimer la rubrique (les tâches sont conservées)",text:"✕"});let arm=0;
-        del.onclick=()=>{if(!arm){arm=1;del.textContent="Supprimer ?";del.classList.add("danger");setTimeout(()=>{if(!del.isConnected)return;arm=0;del.textContent="✕";del.classList.remove("danger")},4000);return}
-          for(const t of tasks)if(t.cat===g.id)t.cat="";cats=cats.filter(c=>c!==g);sv("enviro.cats",cats);sv("enviro.tasks",tasks);renderAll()};
-        hd.append(del)}
-      sec.append(hd)}
+  const wrap=h("div",{class:"rubs","data-drop":"_"}),ROWS=":scope > .tk:not(.done), :scope > .rub.cat";wrap.dataset.rows=ROWS;let li=0;
+  for(const e of topEntries()){
+    if(e.t){wrap.append(taskRow(e.t,li++,full));continue}
+    const g=e.c,ts=tasks.filter(t=>t.cat===g.id),op=ts.filter(t=>!t.done),dn=ts.filter(t=>t.done);
+    const box=h("div",{class:"rubb"}),sec=h("div",{class:"rub cat","data-drop":g.id,"data-id":"c:"+g.id});sec.dataset.rows=".tk:not(.done)";
+    const nm=h("span",{class:"rn",text:g.name}),hd=h("div",{class:"rubh"});
+    hd.append(h("button",{title:g.collapsed?"Déplier":"Replier",text:g.collapsed?"▸":"▾",onclick:()=>{g.collapsed=!g.collapsed;sv("enviro.cats",cats);renderAll()}}),nm,h("span",{class:"cn",text:"("+op.length+")"}),h("span",{class:"sp"}));
+    hd.append(h("button",{title:"Ajouter une tâche dans cette rubrique",text:"+",onclick:()=>catAdd(g)}),
+      h("button",{title:"Monter la rubrique parmi les tâches",text:"▲",onclick:()=>mvTop("c:"+g.id,-1)}),
+      h("button",{title:"Descendre la rubrique parmi les tâches",text:"▼",onclick:()=>mvTop("c:"+g.id,1)}),
+      h("button",{title:"Renommer la rubrique",text:"✎",onclick:()=>catEdit(g,nm)}));
+    const del=h("button",{title:"Supprimer la rubrique « "+g.name+" » (ses tâches sont conservées)",text:"🗑"});let arm=0;
+    del.onclick=()=>{if(!arm){arm=1;del.textContent="Supprimer la rubrique ?";del.classList.add("danger");setTimeout(()=>{if(!del.isConnected)return;arm=0;del.textContent="🗑";del.classList.remove("danger")},4000);return}
+      const keys=topEntries().map(entKey),i=keys.indexOf("c:"+g.id),ids=op.map(t=>t.id);for(const t of tasks)if(t.cat===g.id)t.cat="";
+      if(i>=0)keys.splice(i,1,...ids);cats=cats.filter(c=>c!==g);sv("enviro.cats",cats);sv("enviro.tasks",tasks);topSave(keys);toast("Rubrique supprimée, tâches conservées. Ctrl+Z pour annuler.");renderAll()};
+    hd.append(del);sec.append(hd);
     if(!g.collapsed){op.forEach((t,i)=>box.append(taskRow(t,i,full)));dn.forEach(t=>box.append(taskRow(t,-1,full)));
-      if(!ts.length&&cats.length)box.append(h("div",{class:"hint",text:real?"Glisse des tâches ici.":"Glisse ici une tâche pour la sortir d’une rubrique."}))}
-    if(addIn===g.id){addIn=null;catAddInput(g,box)}
+      if(!ts.length)box.append(h("div",{class:"hint",text:"Glisse des tâches ici."}))}
     sec.append(box);wrap.append(sec);
     if(!g.collapsed)sortable(box,".tk:not(.done)",reorderCat,g.id,moveTask)}
+  tasks.filter(t=>t.done&&catOf(t)==="_").forEach(t=>wrap.append(taskRow(t,-1,full)));
+  if(cats.length)wrap.append(h("div",{class:"rubfoot",text:"↧ Glisse ici une tâche pour la sortir d’une rubrique"}));
   parent.append(wrap);
-  if(cats.length)sortable(wrap,".rub.cat",ids=>{cats=ids.map(i=>cats.find(c=>c.id===i)).filter(Boolean);sv("enviro.cats",cats);renderAll()},undefined,undefined,".rubh")}
+  sortable(wrap,ROWS,ids=>{topSave(ids);renderAll()},"_",moveTask,".rubh")}
 function sqSize(d){const v=Math.max(8,Math.min(44,ld("enviro.sqs",26)+d));sv("enviro.sqs",v);renderAll()}
 function squares(now){
   const by={};for(const e of ev3)for(const k of evDays(e))(by[k]=by[k]||[]).push(e);
@@ -739,6 +749,16 @@ function rRem(b){const d=remDue(),now=Date.now();
       h("div",{class:"rb"},h("span",{text:"Me le rappeler dans :"}),sn("1 jour",864e5),sn("3 jours",3*864e5),sn("1 semaine",WEEK),
         h("button",{class:"btn sm",text:"Supprimer le rappel",onclick:()=>remSet(x.key,{off:true})}))))}
   if(Object.keys(rem).length)b.append(h("div",{class:"act"},h("button",{class:"btn sm",text:"Réactiver tous les rappels supprimés",onclick:()=>{rem={};sv("enviro.rem",rem);remSeen.clear();renderAll()}})))}
+
+/* ---------- Annuler / rétablir (tâches et rubriques) ---------- */
+let inUndo=false,HIST=[],REDO=[],histT=0;
+const hSnap2=()=>JSON.stringify({tasks,cats,top:topO});
+function histPush(){try{const j=hSnap2();if(!HIST.length){HIST.push(j);return}if(HIST[HIST.length-1]===j)return;REDO=[];const n=Date.now();if(n-histT<80&&HIST.length>1)HIST[HIST.length-1]=j;else HIST.push(j);histT=n;if(HIST.length>60)HIST.shift()}catch(e){}}
+function hRestore(j){const p=JSON.parse(j);inUndo=true;tasks=p.tasks;cats=p.cats;topO=p.top;sv("enviro.tasks",tasks);sv("enviro.cats",cats);sv("enviro.top",topO);inUndo=false;selT=null;renderAll()}
+function undo(){if(HIST.length<2){toast("Rien à annuler");return}REDO.push(HIST.pop());hRestore(HIST[HIST.length-1]);toast("Modification annulée (Ctrl+Y pour rétablir)")}
+function redo(){if(!REDO.length){toast("Rien à rétablir");return}const j=REDO.pop();HIST.push(j);hRestore(j);toast("Modification rétablie")}
+document.addEventListener("keydown",e=>{if(!(e.ctrlKey||e.metaKey)||e.altKey)return;const t=e.target;if(t&&t.matches&&t.matches("input,textarea,select,[contenteditable]"))return;
+  const k=e.key.toLowerCase();if(k==="z"&&!e.shiftKey){e.preventDefault();undo()}else if(k==="y"||(k==="z"&&e.shiftKey)){e.preventDefault();redo()}});
 function renderAll(){if(dragging){pendingR=true;return}pendingR=false;document.querySelectorAll(".gh-drag").forEach(x=>x.remove());const ae=document.activeElement;if(ae&&ae.matches&&ae.matches("#app .add input,#app textarea,#app input.ed")&&ae.value)return;const app=$("#app");app.textContent="";
   const T=TABS.find(t=>t.id===tab);
   const hd=h("div",{class:"vh"},h("h2",{text:tab==="home"?"ARTFX - Chez Ouam":T.l}));
@@ -783,7 +803,7 @@ document.addEventListener("keydown",e=>{if(!(e.ctrlKey||e.metaKey))return;
 function dayTick(){const t=dk(new Date());if(!curDay)curDay=t;
   if(t!==curDay){const old=curDay;curDay=t;if(gd===old||!gd)gd=t;if(mcp)pullRange(true);renderAll()}
   else if(tab==="cal"&&ag==="grid"&&!pn)renderAll()}
-function build(){applyZoom();applyBg();$("#bgb").onclick=bgMenu;gd=dk(new Date());curDay=gd;window.addEventListener("focus",()=>{if(Date.now()-(window.__fr||0)>20000){window.__fr=Date.now();refreshAll()}});setInterval(dayTick,60000);document.addEventListener("visibilitychange",()=>{if(!document.hidden){dayTick();clock()}});setTheme(thm);$("#thm").onclick=()=>setTheme(thm==="auto"?"light":thm==="light"?"dark":"auto");$("#bell").onclick=toggleBell;bell();$("#rmb").onclick=()=>openPane("rem","x");$("#rmb").oncontextmenu=e=>{e.preventDefault();sndOn=!sndOn;sv("enviro.snd",sndOn);remCheck();toast(sndOn?"Son doux activé":"Son doux coupé");if(sndOn)chime()};setInterval(()=>{if(!dragging&&remDue().map(x=>x.key).join()!==remSig)renderAll()},60000);document.addEventListener("pointerdown",()=>{try{if(audioCtx&&audioCtx.state==="suspended")audioCtx.resume()}catch(e){}},{once:true});renderAll();clock();setInterval(clock,30000)}
+function build(){applyZoom();applyBg();$("#bgb").onclick=bgMenu;gd=dk(new Date());curDay=gd;window.addEventListener("focus",()=>{if(Date.now()-(window.__fr||0)>20000){window.__fr=Date.now();refreshAll()}});setInterval(dayTick,60000);document.addEventListener("visibilitychange",()=>{if(!document.hidden){dayTick();clock()}});setTheme(thm);$("#thm").onclick=()=>setTheme(thm==="auto"?"light":thm==="light"?"dark":"auto");HIST=[hSnap2()];$("#bell").onclick=toggleBell;bell();$("#rmb").onclick=()=>openPane("rem","x");$("#rmb").oncontextmenu=e=>{e.preventDefault();sndOn=!sndOn;sv("enviro.snd",sndOn);remCheck();toast(sndOn?"Son doux activé":"Son doux coupé");if(sndOn)chime()};setInterval(()=>{if(!dragging&&remDue().map(x=>x.key).join()!==remSig)renderAll()},60000);document.addEventListener("pointerdown",()=>{try{if(audioCtx&&audioCtx.state==="suspended")audioCtx.resume()}catch(e){}},{once:true});renderAll();clock();setInterval(clock,30000)}
 
 /* ---------- Mails ---------- */
 function pbtn(n,t){return h("button",{class:"pb p"+n,title:"Ajouter aux tâches : "+PR[n],text:"P"+n,onclick:()=>addTask(t,n)})}
@@ -929,7 +949,7 @@ function rDayPane(b){const k=pn.id,es=ev3.filter(e=>evDays(e).includes(k)).sort(
 function taskTools(){const t=tasks.find(x=>x.id===selT),w=h("span",{class:"tctl tt"});
   w.append(h("span",{class:"dt",text:t?"Sélection :":"Clique une tâche pour la modifier, la monter ou la supprimer"}));
   const ed=h("button",{class:"btn sm",title:"Modifier le texte (ou double-clic sur la tâche)",text:"Modifier",onclick:()=>{const el=document.querySelector('.tk[data-id="'+selT+'"] .tb');if(t&&el)editTask(t,el)}});if(!t)ed.disabled=true;w.append(ed);
-  const mvT=d=>{const o=openT(),c=t?catOf(t):"_",l=o.filter(x=>catOf(x)===c),i=l.findIndex(x=>x.id===selT),j=i+d;if(i<0||j<0||j>=l.length)return;[l[i],l[j]]=[l[j],l[i]];tasks=[...o.filter(x=>catOf(x)!==c),...l,...tasks.filter(x=>x.done)];sv("enviro.tasks",tasks);renderAll()};
+  const mvT=d=>{if(t&&catOf(t)==="_"){mvTop(t.id,d);return}const o=openT(),c=t?catOf(t):"_",l=o.filter(x=>catOf(x)===c),i=l.findIndex(x=>x.id===selT),j=i+d;if(i<0||j<0||j>=l.length)return;[l[i],l[j]]=[l[j],l[i]];tasks=[...o.filter(x=>catOf(x)!==c),...l,...tasks.filter(x=>x.done)];sv("enviro.tasks",tasks);renderAll()};
   for(const[l,d,ti]of[["▲",-1,"Monter"],["▼",1,"Descendre"]]){const bt=h("button",{class:"btn sm",title:ti,text:l,onclick:()=>mvT(d)});if(!t||t.done)bt.disabled=true;w.append(bt)}
   if(cats.length){const rs=h("select",{title:"Déplacer la tâche dans une rubrique",onchange:()=>{if(t&&rs.value)moveTask(t.id,rs.value,9999)}},h("option",{value:"",text:"Rubrique…"}),h("option",{value:"_",text:"Sans rubrique"}),...cats.map(c=>h("option",{value:c.id,text:c.name})));if(!t||t.done)rs.disabled=true;w.append(rs)}
   const del=h("button",{class:"btn sm",title:"Supprimer la tâche sélectionnée"},ico("trash"));let arm=0;
@@ -937,7 +957,8 @@ function taskTools(){const t=tasks.find(x=>x.id===selT),w=h("span",{class:"tctl 
   del.onclick=()=>{if(!t)return;
     if(!arm){arm=1;del.textContent="Supprimer ?";del.classList.add("danger");
       setTimeout(()=>{if(!del.isConnected)return;arm=0;del.textContent="";del.append(ico("trash"));del.classList.remove("danger")},4000);return}
-    tasks=tasks.filter(x=>x!==t);selT=null;sv("enviro.tasks",tasks);renderAll()};
+    tasks=tasks.filter(x=>x!==t);selT=null;sv("enviro.tasks",tasks);toast("Tâche supprimée. Ctrl+Z pour annuler.");renderAll()};
+  const un=h("button",{class:"btn sm",title:"Annuler la dernière modification des tâches (Ctrl+Z)",text:"↶"});un.onclick=undo;w.append(un);
   w.append(del);return w}
 function rTasks(b){b.textContent="";
   b.append(addRow());
