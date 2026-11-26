@@ -15,8 +15,8 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpListener;
 use tokio::sync::Mutex;
 
-/// Droits demandés à Google : Gmail (lire, étiqueter, archiver, répondre) et Agenda (lecture seule).
-const SCOPES: &str = "https://www.googleapis.com/auth/gmail.modify https://www.googleapis.com/auth/calendar.readonly";
+/// Droits demandés à Google : Gmail (lire, étiqueter), Agenda (lecture seule) et Tasks (import des « Ajouter aux tâches »).
+const SCOPES: &str = "https://www.googleapis.com/auth/gmail.modify https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/tasks";
 const KEYRING_SERVICE: &str = "enviro-travail";
 const KEYRING_USER: &str = "google-refresh-token";
 
@@ -268,7 +268,8 @@ pub async fn google_request(
     body: Option<Value>,
 ) -> Result<Value, String> {
     let allowed = url.starts_with("https://gmail.googleapis.com/")
-        || url.starts_with("https://www.googleapis.com/calendar/");
+        || url.starts_with("https://www.googleapis.com/calendar/")
+        || url.starts_with("https://tasks.googleapis.com/");
     if !allowed {
         return Err("URL non autorisée".to_string());
     }

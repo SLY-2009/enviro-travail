@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="fr"><head><meta charset="utf-8">
-<meta name="enviro-ui" content="20261124-1700">
+<meta name="enviro-ui" content="20261126-1130">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Enviro Travail</title>
 <style>
@@ -401,6 +401,65 @@ async function listEvents(a) {
   return { summary: r.summary, events: r.items || [], nextPageToken: r.nextPageToken };
 }
 
+
+/* ---------- Google Tasks : « Ajouter aux tâches » de Gmail -> étiquette « À répondre » ---------- */
+const TK = "https://tasks.googleapis.com/tasks/v1/";
+const normL = s => String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+async function labelIdByName(name) {
+  const r = await listLabels(), f = r.labels.find(l => normL(l.name) === normL(name));
+  return f ? f.labelId : (await createLabel({ name })).labelId;
+}
+function idsFromLink(link) {
+  const out = [], s = String(link || "");
+  const m = s.match(/#[a-z-]+\/([^?\/#&]+)/i); if (m) out.push(m[1]);
+  const q = s.match(/[?&](?:th|permmsgid|msgid)=([^&#]+)/i); if (q) out.push(decodeURIComponent(q[1]).replace(/^msg-[a-z]:/i, ""));
+  return out;
+}
+async function resolveThread(task, link) {
+  for (const id of idsFromLink(link)) {
+    if (!/^[0-9a-f]{10,20}$/i.test(id)) continue; // identifiant Gmail classique (fil ou message)
+    try { const t = await gapi("GET", G + "threads/" + id + "?format=minimal"); if (t && t.id) return t.id; } catch (e) {}
+    try { const m = await gapi("GET", G + "messages/" + id + "?format=minimal"); if (m && m.threadId) return m.threadId; } catch (e) {}
+  }
+  const title = String(task.title || "").replace(/["\\]/g, " ").trim(); // repli : recherche par objet
+  if (!title) return null;
+  const r = await gapi("GET", G + "threads?maxResults=5&q=" + encodeURIComponent('subject:("' + title + '") newer_than:120d'));
+  return (r.threads && r.threads[0] && r.threads[0].id) || null;
+}
+let tBusy = false, tWarn = "";
+async function importTasks() {
+  if (tBusy) return 0; tBusy = true; let n = 0, lost = 0;
+  try {
+    const seen = new Set(JSON.parse(localStorage.getItem("enviro.tdone") || "[]"));
+    const ls = (await gapi("GET", TK + "users/@me/lists?maxResults=20")).items || [];
+    for (const L of ls) {
+      const r = await gapi("GET", TK + "lists/" + L.id + "/tasks?showCompleted=false&showHidden=false&maxResults=100");
+      for (const t of r.items || []) {
+        if (t.status === "completed" || seen.has(t.id)) continue;
+        const lk = (t.links || []).find(x => x.type === "email"); if (!lk) continue;
+        const tid = await resolveThread(t, lk.link);
+        if (!tid) { lost++; continue; }
+        await modify({ threadId: tid }, [await labelIdByName("À répondre")], []);
+        seen.add(t.id); n++;
+        try { await gapi("PATCH", TK + "lists/" + L.id + "/tasks/" + t.id, { status: "completed" }); } catch (e) {}
+      }
+    }
+    localStorage.setItem("enviro.tdone", JSON.stringify([...seen].slice(-300)));
+    tWarn = "";
+    if (lost && window.toast && tWarn !== "lost") { tWarn = "lost"; window.toast(lost + " tâche(s) Gmail n’ont pas pu être associées à un mail."); }
+  } catch (e) {
+    const m = String((e && e.message) || e);
+    let msg = "";
+    if (/SCOPE_INSUFFICIENT|insufficient|Insufficient Permission/i.test(m)) msg = "Pour recevoir les « Ajouter aux tâches » de Gmail : clique sur ⚙, déconnecte-toi puis reconnecte-toi à Google, et accepte l’accès aux tâches.";
+    else if (/has not been used|accessNotConfigured|SERVICE_DISABLED|is disabled/i.test(m)) msg = "L’API Google Tasks n’est pas activée dans ton projet Google Cloud (voir les instructions).";
+    if (msg && tWarn !== msg && window.toast) { tWarn = msg; window.toast(msg); }
+    else if (!msg) console.warn("Google Tasks : " + m);
+  } finally { tBusy = false; }
+  if (n && window.refreshAll) { window.refreshAll(); if (window.toast) window.toast(n + " mail(s) ajouté(s) à « À répondre »."); }
+  return n;
+}
+window.importTasks = importTasks;
+
 /* ---------- Adaptateur « connecteurs » attendu par l'interface ---------- */
 const TOOLS = {
   "Gmail": { search_threads: searchThreads, get_thread: getThread, list_labels: listLabels, create_label: createLabel,
@@ -445,6 +504,7 @@ const gear = el("button", "border:0;background:none;font-size:15px;cursor:pointe
 gear.title = "Compte Google"; gear.onclick = () => showGate();
 const mb = document.querySelector("#mb"); if (mb) mb.insertBefore(gear, document.querySelector("#bell"));
 inv("google_status").then(s => { if (s.configured && s.connected) resolveReady(); else showGate(); }).catch(() => showGate());
+ready.then(() => { setTimeout(importTasks, 6000); setInterval(importTasks, 60000); });
 
 /* ---------- Mise à jour : au lancement (résultat affiché), puis toutes les 6 heures ---------- */
 const say = m => { if (window.toast) window.toast(m); };
@@ -507,7 +567,7 @@ function go(id){if(id===tab)return;nav.push(snapN());if(nav.length>40)nav.shift(
 function back(){const p=nav.pop();if(!p)return;tab=p.tab;ag=p.ag;gd=p.gd||gd;fx=null;sv("enviro.tab",tab);renderAll();window.scrollTo(0,p.y)}
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!/INPUT|TEXTAREA|SELECT/.test((document.activeElement||{}).tagName||"")){if(pn)closePane();else if(nav.length)back()}});
 function clock(){const d=new Date(),v=(document.querySelector('meta[name="enviro-ui"]')||{}).content;$("#clk").textContent=cap(fDay.format(d))+"  "+fHr.format(d)+(v?"  ·  interface "+v:"")}
-function refreshAll(){if(!mcp)return;pull("mail");pull("cal");pull("rep");pull("lire");pull("star");pullRange(true)}
+function refreshAll(){if(!mcp)return;if(window.importTasks)window.importTasks();pull("cal");pull("rep");pull("lire");pull("star");pullRange(true)}
 const openT=()=>roots().filter(t=>!t.done),rankC=i=>i<2?"var(--p1)":i<5?"var(--p2)":"var(--p3)",urgent=()=>openT().slice(0,2);
 const ICO={home:'<path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v10h13V10"/>',mail:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',tasks:'<rect x="4" y="4" width="16" height="16" rx="3"/><path d="m8.5 12.5 2.5 2.5 4.5-5"/>',cal:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',trash:'<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>'};
 function ico(n){const e=h("span",{class:"ico"});e.innerHTML='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">'+ICO[n]+'</svg>';return e}
@@ -848,17 +908,13 @@ function renderAll(){if(dragging){pendingR=true;return}pendingR=false;document.q
   if(tab==="cal"){const sg=h("div",{class:"seg"});
     for(const[k,l]of[["grid","Planning"],["week","Liste"],["focus","Essentiel"],["range","3 mois"]])sg.append(h("button",{class:ag===k?"on":"",text:l,onclick:()=>{if(ag===k)return;nav.push(snapN());ag=k;sv("enviro.ag2",k);renderAll()}}));
     hd.append(sg)}
-  if(tab==="mail"){const sg=h("div",{class:"seg"});
-    for(const[k,l]of[["inbox","Boîte de réception"],["rep","À répondre"+(lists.rep.length?" ("+lists.rep.length+")":"")],["lire","À lire"+(lists.lire.length?" ("+lists.lire.length+")":"")]])sg.append(h("button",{class:mg===k?"on":"",text:l,onclick:()=>{if(mg===k)return;mg=k;sv("enviro.mg",k);renderAll()}}));
-    hd.append(sg)}
-  if(tab==="mail")hd.append(lnk("✎ Nouveau mail",composeUrl(),"gmail"),lnk("Ouvrir Gmail ↗",gmailUrl(),"gmail"));
   if(tab==="cal")hd.append(lnk("+ Événement",newEvUrl(),"gcal"),lnk("Ouvrir Agenda ↗",gcalUrl(),"gcal"));
   if(tab==="tasks")hd.append(taskTools());
   if(tab!=="tasks")hd.append(h("button",{title:"Actualiser",text:"↻",onclick:refreshAll}));
   if(nav.length)hd.prepend(h("button",{class:"btn",title:"Retour",text:"‹ Retour",onclick:back}));
   const box=h("div",{class:tab==="home"?"":"panel"});const mc=h("div",{class:"mainc"});if(urgent().length&&tab!=="tasks"&&tab!=="home")mc.append(banner());{const rb=remBanner();if(rb)mc.append(rb)}mc.append(hd,box);app.append(mc);
   if(pn){const pb=h("div",{class:"mb2"}),bg=h("div",{class:"mbg",onclick:e=>{if(e.target===bg)closePane()}},h("div",{class:"mdl"+(pn.k==="mail"?" wide":"")},h("div",{class:"ph"},h("b",{text:paneTitle()}),h("span",{style:"flex:1"}),h("button",{class:"btn",title:"Fermer (Échap)","aria-label":"Fermer",text:"×",onclick:closePane})),pb));app.append(bg);rPane(pb)}
-  ({home:rHome,mail:rMail,tasks:rTasks,cal:ag==="grid"?rGrid:ag==="week"?rCal:ag==="focus"?rFocus:rRange})[tab](box);
+  ({home:rHome,tasks:rTasks,cal:ag==="grid"?rGrid:ag==="week"?rCal:ag==="focus"?rFocus:rRange})[tab](box);
   renderTabs();notifyUrgent();remCheck();
   if(fx){const el=$(".hl");if(el)el.scrollIntoView({block:"center",behavior:"smooth"});
     clearTimeout(renderAll.t);renderAll.t=setTimeout(()=>{fx=null;document.querySelectorAll(".hl").forEach(x=>x.classList.remove("hl"))},3000)}}
@@ -897,28 +953,6 @@ function stateMsg(k,b){const e=st[k];
     return AUTHZ.includes(e.code)}
   if(!loaded[k]){b.append(h("div",{class:"msg",text:"Chargement…"}));return true}
   return false}
-function rMail(b){b.textContent="";
-  if(mg==="rep"){mailList(b,"rep");return}
-  if(mg==="lire"){mailList(b,"lire");return}
-  if(stateMsg("mail",b))return;
-  const fs=h("select",{onchange:()=>{lf=fs.value;renderAll()}},h("option",{value:"",text:"Toutes les étiquettes"}),h("option",{value:"-",text:"Sans étiquette"}),...labels.map(x=>h("option",{value:x.labelId,text:x.name})));
-  fs.value=lf;
-  b.append(h("div",{class:"add"},fs));
-  const vis=mails.filter(t=>{const ls=lbOf(t);return lf===""||(lf==="-"?!ls.length:ls.includes(lf))});
-  if(!vis.length){b.append(h("div",{class:"msg",text:mails.length?"Aucun mail avec ce filtre parmi les derniers reçus.":"Boîte de réception vide."}));return}
-  for(const t of vis){const ms=t.messages||[],m=ms[ms.length-1]||{};
-    const inT=tasks.find(x=>x.threadId===t.id);
-    const unr=(m.labelIds||[]).includes("UNREAD");
-    const d=m.date?fShort.format(new Date(m.date)):"";
-    b.append(h("div",{class:"it lk"+(unr?" unr":"")+(fx&&fx.k==="mail"&&fx.id===t.id?" hl":""),onclick:e=>{if(e.target.closest("button,a,select,input"))return;openMail(t)}},
-      h("div",{class:"r1"},h("span",{class:"sd",text:m.sender||"—"}),h("span",{class:"dt",text:d})),
-      h("div",{class:"sj"},m.subject||"(sans objet)"),
-      h("div",{class:"sn",text:dec(m.snippet)}),
-      h("div",{class:"act"},
-        h("button",{class:"btn sm",text:"Lire / Répondre",onclick:()=>openMail(t)}),tagBtn(t,"rep"),tagBtn(t,"lire"),
-        h("button",{text:"Archiver",onclick:()=>archive(t)}),
-        lsel(t)),
-      lbOf(t).length?h("div",{class:"act"},lbOf(t).map(i=>chip(i))):null))}}
 async function archive(t){
   try{await mcp.callTool("Gmail","unlabel_thread",{threadId:t.id,labelIds:["INBOX"]});
     mails=mails.filter(x=>x.id!==t.id);renderAll();mcp.invalidate("Gmail","search_threads").catch(()=>{});toast("Mail archivé")}
@@ -1051,23 +1085,6 @@ async function loadThread(id,refresh){
     try{await mcp.callTool("Gmail","unlabel_thread",{threadId:id,labelIds:["UNREAD"]});
       const strip=l=>{for(const m of l)m.labelIds=(m.labelIds||[]).filter(x=>x!=="UNREAD")};
       strip(ms);const t=mails.find(x=>x.id===id);if(t)strip(t.messages||[]);renderAll()}catch{}}}
-function replyBox(last,nm){const id=ot;
-  const ta=h("textarea",{placeholder:"Votre réponse…"});ta.value=dr[id]||"";ta.addEventListener("input",()=>{dr[id]=ta.value});
-  const ra=h("input",{type:"checkbox"}),send=h("button",{class:"btn",text:"Envoyer"}),sg=h("input",{type:"checkbox"});let arm=0;
-  sg.checked=ld("enviro.sig",true);sg.addEventListener("change",()=>sv("enviro.sig",sg.checked));
-  const v=()=>ta.value.trim();
-  send.onclick=async()=>{
-    if(!v()){toast("Écris d’abord ta réponse.");return}
-    if(!arm){arm=1;send.textContent="Confirmer l’envoi à "+(ra.checked?"tous les destinataires":nm(last.sender));send.classList.add("danger");
-      setTimeout(()=>{arm=0;send.textContent="Envoyer";send.classList.remove("danger")},6000);return}
-    arm=0;send.disabled=true;
-    try{await mcp.callTool("Gmail","reply",{messageId:last.id,body:v(),replyAll:ra.checked,includeSignature:sg.checked});dr[id]="";toast("Réponse envoyée");loadThread(id,true)}
-    catch(e){send.disabled=false;send.textContent="Envoyer";send.classList.remove("danger");toast("Envoi impossible : "+errTxt(e))}};
-  const dft=h("button",{class:"btn",text:"Enregistrer en brouillon",onclick:async()=>{
-    if(!v()){toast("Écris d’abord ta réponse.");return}
-    try{await mcp.callTool("Gmail","create_draft",{replyToMessageId:last.id,body:v(),includeSignature:sg.checked});dr[id]="";toast("Brouillon enregistré dans Gmail");renderAll()}
-    catch(e){toast("Brouillon impossible : "+errTxt(e))}}});
-  return h("div",{class:"rb"},h("div",{class:"sn",text:"Réponse à "+nm(last.sender)}),ta,h("div",{class:"act"},send,dft,h("label",{class:"sn"},ra," Répondre à tous"),h("label",{class:"sn"},sg," Inclure ma signature")))}
 function rThread(b){b.textContent="";
   const x=th[ot]||{},t=mails.find(m=>m.id===ot)||lists.rep.find(m=>m.id===ot)||lists.lire.find(m=>m.id===ot);
   if(!mcp){b.append(h("div",{class:"msg",text:"Les connecteurs ne sont pas disponibles ici."}));return}
@@ -1076,8 +1093,7 @@ function rThread(b){b.textContent="";
   const ms=x.d.messages||[],last=ms[ms.length-1]||{};
   const nm=a=>{for(const m of ms)for(const d of m.addressDisplayNames||[])if(d.emailAddress===a)return d.displayName;return a||"—"};
   const hd=h("div",{class:"th-h"},h("h3",{class:"th-s",text:last.subject||"(sans objet)"}));
-  if(t){hd.append(tagBtn(t,"rep"),tagBtn(t,"lire"),h("button",{class:"btn sm",text:"Archiver",onclick:async()=>{await archive(t);if(!mails.some(m=>m.id===ot))closePane()}}))}
-  if(x.d.viewUrl)hd.append(h("a",{class:"btn sm",href:x.d.viewUrl,target:"gmail",text:"Gmail ↗"}));
+  if(x.d.viewUrl)hd.append(h("a",{class:"btn",href:x.d.viewUrl,target:"gmail",text:"Répondre dans Gmail ↗"}));
   b.append(hd);
   for(const m of ms){const body=(m.plaintextBody||m.snippet||"").trim(),full=exp[m.id]||body.length<=2500;
     b.append(h("div",{class:"msg-b"},
@@ -1085,7 +1101,7 @@ function rThread(b){b.textContent="";
       h("div",{class:"sn",text:"À : "+(m.toRecipients||[]).map(nm).join(", ")+((m.ccRecipients||[]).length?" · Cc : "+m.ccRecipients.map(nm).join(", "):"")}),
       h("div",{class:"bd",text:full?body:body.slice(0,2500)+"…"}),
       full?null:h("button",{class:"btn sm",text:"Afficher tout",onclick:()=>{exp[m.id]=1;renderAll()}})))}
-  b.append(replyBox(last,nm))}
+}
 
 /* ---------- Planning (vue type Google Agenda) ---------- */
 const HH=44,pd=k=>{const[y,m,d]=k.split("-").map(Number);return new Date(y,m-1,d)};
@@ -1178,7 +1194,7 @@ function mailRow(t,k,i){const ms=t.messages||[],m=ms[ms.length-1]||{},d=m.date?f
     h("div",{class:"sj",text:m.subject||"(sans objet)"}),
     h("div",{class:"act"},
       k==="star"?h("button",{class:"btn sm",text:"Retirer du suivi",title:"Retire l’étoile dans Gmail",onclick:()=>unstar(t)}):h("button",{class:"btn sm",text:"Fait",title:"Retirer l’étiquette « "+TAGS[k]+" »",onclick:()=>tagMail(t,k)}),
-      h("button",{class:"btn sm",text:"Lire / Répondre",onclick:()=>openMail(t)})))}
+      h("button",{class:"btn sm",text:"Ouvrir",title:"Lire le mail dans une fenêtre",onclick:()=>openMail(t)})))}
 function mailList(b,k){
   if(k!=="star")b.dataset.drop=k;
   if(stateMsg(k,b))return;
@@ -1211,8 +1227,9 @@ build();
   try{mcp=window.claude?await window.claude.use("mcp"):null}catch{mcp=null}
   renderAll();
   loadCfg();
-  if(mcp){watch("mail");watch("cal");watch("rep");watch("lire");watch("star");pullRange();setInterval(()=>pullRange(true),300000);
+  if(mcp){loaded.mail=true;watch("cal");watch("rep");watch("lire");watch("star");pullRange();setInterval(()=>pullRange(true),300000);
     mcp.callTool("Gmail","list_labels",{}).then(r=>{const p=r&&r.payload;labels=((p&&p.labels)||[]).filter(x=>x.labelType==="USER").sort((a,b)=>a.name.localeCompare(b.name,"fr"));renderAll()}).catch(()=>{})}
+window.toast=toast;window.refreshAll=refreshAll;
 })();
 </script>
 </body></html>
